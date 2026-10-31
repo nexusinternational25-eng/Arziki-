@@ -424,6 +424,8 @@ La règle légale n° 3 reste entière : **aucune opération n'est visible par u
 
 Deux affiches fournies portent la mention « Croissance garantie ». Elle est contraire à la règle légale n° 2 et ne doit apparaître **ni dans l'application ni dans ses fiches Google Play**. Un test automatique (`test/textes_test.dart`) bloque ces formules dans le code.
 
+**Pas de drapeau du Togo** (décision du propriétaire) : aucune image, icône ou illustration de l'application, de la console ou des fiches Google Play ne doit montrer le drapeau togolais. Plusieurs affiches fournies en contiennent : n'en reprendre que des parties sans drapeau.
+
 ### 21.4 Compléments au modèle de données (section 13)
 
 ```

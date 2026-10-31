@@ -118,20 +118,26 @@ class _EcranPresentationState extends ConsumerState<EcranPresentation> {
                   final p = _pages[i];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: ArzikiEspaces.l),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.asset(p.image, fit: BoxFit.cover, width: double.infinity),
-                          ),
+                    child: Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const LogoArziki(hauteur: 64),
+                            const SizedBox(height: ArzikiEspaces.l),
+                            // Photo affichée entière (pas de zoom).
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(p.image, fit: BoxFit.fitWidth, width: double.infinity),
+                            ),
+                            const SizedBox(height: ArzikiEspaces.l),
+                            Text(p.titre,
+                                style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
+                            const SizedBox(height: ArzikiEspaces.m),
+                            Text(p.texte, textAlign: TextAlign.center),
+                          ],
                         ),
-                        const SizedBox(height: ArzikiEspaces.l),
-                        Text(p.titre, style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
-                        const SizedBox(height: ArzikiEspaces.m),
-                        Text(p.texte, textAlign: TextAlign.center),
-                        const SizedBox(height: ArzikiEspaces.l),
-                      ],
+                      ),
                     ),
                   );
                 },
