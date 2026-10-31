@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ARZIKI · Ta commande. Notre financement.</title>
+  <meta name="description" content="ARZIKI : la Commande Financée au Togo. Version de démonstration.">
+  <link rel="icon" href="logo.png">
+  <style>
+    :root { --orange:#F28C28; --vert:#1E8E4E; --jaune:#F7C51E; --texte:#1D2733; --fond:#F6F7F8; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--texte); background:#fff; line-height:1.5; }
+    .demo { background:var(--jaune); text-align:center; font-weight:600; font-size:14px; padding:6px; }
+    header { text-align:center; padding:32px 20px 8px; }
+    header img { max-width:300px; width:80%; }
+    main { max-width:720px; margin:0 auto; padding:0 20px 48px; }
+    h1 { font-size:26px; text-align:center; margin:8px 0 4px; }
+    .sous { text-align:center; color:#4a5560; margin:0 0 28px; }
+    .carte { background:var(--fond); border:1px solid #1D273322; border-radius:16px; padding:20px; margin:16px 0; }
+    .carte h2 { margin:0 0 8px; font-size:20px; color:var(--vert); }
+    .bouton { display:block; text-align:center; background:var(--orange); color:#fff; text-decoration:none; font-weight:700; font-size:17px; padding:15px; border-radius:12px; margin-top:12px; }
+    .bouton.vert { background:var(--vert); }
+    .petit { font-size:14px; color:#4a5560; }
+    ol { padding-left:20px; margin:8px 0 0; }
+    code { background:#fff; border:1px solid #1D273322; border-radius:6px; padding:1px 6px; font-size:15px; }
+    table { width:100%; border-collapse:collapse; font-size:15px; margin-top:8px; }
+    td { padding:6px 4px; border-bottom:1px solid #1D273315; vertical-align:top; }
+    footer { text-align:center; font-size:13px; color:#4a5560; padding:24px; }
+  </style>
+</head>
+<body>
+  <div class="demo">Version de démonstration : données fictives, aucun paiement réel</div>
+  <header><img src="logo.png" alt="ARZIKI, Ta commande. Notre financement."></header>
+  <main>
+    <h1>La Commande Financée au Togo</h1>
+    <p class="sous">Une commande ferme, un financement encadré par un notaire, un Cercle privé d'investisseurs.</p>
+
+    <div class="carte">
+      <h2>Application Android</h2>
+      <p>Pour les entreprises, les membres du Cercle, les fournisseurs et les notaires.</p>
+      <a class="bouton" href="ARZIKI.apk" download>Télécharger l'application (APK, __TAILLE__)</a>
+      <p class="petit">Version __VERSION__ du __DATE__.</p>
+      <ol class="petit">
+        <li>Appuyez sur le bouton et ouvrez le fichier téléchargé.</li>
+        <li>Si Android le demande, autorisez l'installation depuis cette source.</li>
+        <li>Ouvrez ARZIKI.</li>
+      </ol>
+    </div>
+
+    <div class="carte">
+      <h2>Essayer sans installer</h2>
+      <p>La même application, directement dans le navigateur.</p>
+      <a class="bouton vert" href="app/">Ouvrir l'application en ligne</a>
+    </div>
+
+    <div class="carte">
+      <h2>Console d'administration</h2>
+      <p>Réservée à l'équipe ARZIKI : comptes, investisseurs privés, candidatures au Cercle, équipe, journal d'audit.</p>
+      <a class="bouton vert" href="console/">Ouvrir la console</a>
+    </div>
+
+    <div class="carte">
+      <h2>Comptes de démonstration</h2>
+      <p class="petit">Le code reçu « par SMS » est toujours <code>123456</code>.</p>
+      <table>
+        <tr><td>Super administrateur (console)</td><td><code>admin@arziki.demo</code> / <code>demo1234</code></td></tr>
+        <tr><td>Investisseur privé invité</td><td>code <code>ARZ-DEMO-2026</code> avec le <code>90000071</code></td></tr>
+        <tr><td>Membre du Cercle</td><td><code>90000021</code></td></tr>
+        <tr><td>Partenaire du Cercle</td><td><code>90000031</code></td></tr>
+        <tr><td>Entreprise</td><td><code>90000011</code></td></tr>
+        <tr><td>Fournisseur</td><td><code>90000041</code></td></tr>
+        <tr><td>Notaire</td><td><code>90000051</code></td></tr>
+        <tr><td>Candidat au Cercle</td><td><code>90000061</code></td></tr>
+      </table>
+    </div>
+
+    <div class="carte petit">
+      ARZIKI propose des participations à des opérations commerciales. Ce ne sont ni des prêts ni des placements garantis.
+      Vous pouvez perdre tout ou partie de votre mise. Les marges indiquées sont des objectifs, pas des promesses.
+    </div>
+  </main>
+  <footer>ARZIKI, une initiative de NEXUS International, Lomé.</footer>
+</body>
+</html>
