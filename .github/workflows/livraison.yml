@@ -136,6 +136,11 @@ jobs:
           cp -r build/site-console site/console
           # Fichiers inutiles en ligne (symboles de débogage)
           find site -name '*.symbols' -delete
+          # Adresse relative : le site marche à la racine (Vercel) comme dans un
+          # sous-dossier (GitHub Pages : /Arziki-/).
+          sed -i 's#<base href="/app/">#<base href="./">#' site/app/index.html
+          sed -i 's#<base href="/console/">#<base href="./">#' site/console/index.html
+          touch site/.nojekyll
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
           TAILLE="$(( $(stat -c%s site/ARZIKI.apk) / 1048576 )) Mo"
           DATE=$(TZ=Africa/Lome date +'%d/%m/%Y à %Hh%M')
