@@ -94,6 +94,7 @@ class ChampCode extends StatelessWidget {
       decoration: InputDecoration(
         labelText: libelle,
         helperText: AppConfig.estDemo ? 'Démonstration : le code est ${AppConfig.codeSmsDemo}' : null,
+        helperMaxLines: 2,
       ),
     );
   }
@@ -156,6 +157,7 @@ class _EcranInvitationState extends ConsumerState<EcranInvitation> {
             labelText: "Code d'invitation",
             hintText: 'ARZ-XXXX-XXXX',
             helperText: AppConfig.estDemo ? 'Démonstration : ARZ-DEMO-2026 avec le 90 00 00 71' : null,
+            helperMaxLines: 2,
           ),
         ),
         const SizedBox(height: ArzikiEspaces.m),
