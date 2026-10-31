@@ -11,7 +11,7 @@ name: Construire l'APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, "claude/**"]
   workflow_dispatch:
     inputs:
       mode:
