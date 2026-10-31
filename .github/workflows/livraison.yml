@@ -153,6 +153,20 @@ jobs:
           git commit -q -m "Livraison de ${GITHUB_SHA::7} ($MODE)"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" livraison
 
+      # Lien public et stable, sans compte GitHub :
+      # https://github.com/<dépôt>/releases/latest/download/ARZIKI.apk
+      - name: Publier l'APK (release GitHub)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete demo --yes --cleanup-tag --repo "${{ github.repository }}" || true
+          gh release create demo site/ARZIKI.apk \
+            --repo "${{ github.repository }}" \
+            --target "${GITHUB_SHA}" \
+            --title "ARZIKI, version de démonstration" \
+            --notes "Application Android ARZIKI en mode démonstration (données fictives). Code SMS : 123456. Construite le $(TZ=Africa/Lome date +'%d/%m/%Y à %Hh%M')." \
+            --latest
+
       - uses: actions/upload-artifact@v4
         with:
           name: arziki-${{ env.MODE }}-${{ github.run_number }}
