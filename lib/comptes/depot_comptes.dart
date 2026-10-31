@@ -26,6 +26,9 @@ const int seuilAlerteTailleCercle = 90;
 const int limiteTailleCercle = 100;
 
 abstract class DepotComptes {
+  /// Profil d'une personne (la sienne, ou n'importe laquelle pour l'équipe).
+  Future<Utilisateur?> lireProfil(String uid);
+
   // ----- Lecture (console) -----
   Future<List<Utilisateur>> listerComptes();
   Future<List<Invitation>> listerInvitations();

@@ -3,6 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../comptes/depot_comptes.dart';
+import '../comptes/depot_comptes_firebase.dart';
 import '../config/app_config.dart';
 import '../core/roles.dart';
 import '../demo/base_demo.dart';
@@ -10,22 +11,22 @@ import '../demo/depot_auth_demo.dart';
 import '../demo/depot_comptes_demo.dart';
 import '../models/utilisateur.dart';
 import 'depot_auth.dart';
+import 'depot_auth_firebase.dart';
 
 /// Base fictive utilisée en mode démonstration.
 final baseDemoProvider = Provider<BaseDemo>((ref) => BaseDemo());
 
+/// Démonstration : base fictive. Production : Firestore + Cloud Functions.
 final depotComptesProvider = Provider<DepotComptes>((ref) {
   if (AppConfig.estDemo) return DepotComptesDemo(ref.watch(baseDemoProvider));
-  // Le branchement Firebase arrive dès que le projet Firebase est fourni
-  // (CLAUDE.md, section 18, point 1).
-  throw StateError('Mode production : projet Firebase non configuré.');
+  return DepotComptesFirebase();
 });
 
 final depotAuthProvider = Provider<DepotAuth>((ref) {
   if (AppConfig.estDemo) {
     return DepotAuthDemo(ref.watch(baseDemoProvider), ref.watch(depotComptesProvider) as DepotComptesDemo);
   }
-  throw StateError('Mode production : projet Firebase non configuré.');
+  return DepotAuthFirebase();
 });
 
 class EtatSession {
@@ -61,10 +62,10 @@ class ControleurSession extends Notifier<EtatSession> {
   }
 
   /// Relit le profil (après une validation par un administrateur, par exemple).
-  void rafraichir() {
+  Future<void> rafraichir() async {
     final u = state.utilisateur;
-    if (u == null || !AppConfig.estDemo) return;
-    final frais = ref.read(baseDemoProvider).utilisateurs[u.uid];
+    if (u == null) return;
+    final frais = await ref.read(depotComptesProvider).lireProfil(u.uid);
     if (frais != null) state = state.avec(utilisateur: frais);
   }
 

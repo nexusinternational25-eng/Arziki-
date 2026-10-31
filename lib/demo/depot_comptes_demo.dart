@@ -23,6 +23,9 @@ class DepotComptesDemo implements DepotComptes {
   // ----- Lecture -----
 
   @override
+  Future<Utilisateur?> lireProfil(String uid) async => base.utilisateurs[uid];
+
+  @override
   Future<List<Utilisateur>> listerComptes() async =>
       base.utilisateurs.values.toList()..sort((a, b) => a.nomComplet.compareTo(b.nomComplet));
 

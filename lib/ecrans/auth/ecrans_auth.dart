@@ -130,7 +130,7 @@ class _EcranInvitationState extends ConsumerState<EcranInvitation> {
         'parcours': Parcours.invitation.code,
         'code': inv.code,
         'tel': telephone,
-        'nom': inv.pourNom,
+        if (inv.pourNom.isNotEmpty) 'nom': inv.pourNom,
       }).toString());
     } on ErreurAcces catch (e) {
       setState(() => _erreur = e.message);

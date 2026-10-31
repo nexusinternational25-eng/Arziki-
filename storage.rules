@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Règles Cloud Storage ARZIKI. Tout est interdit par défaut.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function connecte() {
+      return request.auth != null;
+    }
+
+    function estEquipe() {
+      return connecte()
+        && request.auth.token.role in ['super_admin', 'admin', 'analyste']
+        && request.auth.token.firebase.get('sign_in_second_factor', null) != null;
+    }
+
+    // Photo ou PDF, 10 Mo maximum.
+    function documentAccepte() {
+      return request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType == 'application/pdf');
+    }
+
+    match /{tout=**} {
+      allow read, write: if false;
+    }
+
+    // Pièces d'identité : la personne dépose, elle et l'équipe peuvent lire.
+    // Pas de modification ni de suppression d'une pièce déjà déposée.
+    match /kyc/{uid}/{fichier} {
+      allow read: if connecte() && (request.auth.uid == uid || estEquipe());
+      allow create: if connecte() && request.auth.uid == uid && documentAccepte();
+      allow update, delete: if false;
+    }
+  }
+}

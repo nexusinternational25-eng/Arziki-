@@ -1,0 +1,153 @@
+rules_version = '2';
+
+// Règles de sécurité Firestore ARZIKI (CLAUDE.md, section 13 et section 21).
+// Principe : tout est interdit par défaut. Les écritures sensibles (rôles,
+// statuts, montants, invitations, candidatures, journal) passent uniquement
+// par les Cloud Functions, qui contournent ces règles avec les droits serveur.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----- Outils -----
+
+    function connecte() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return request.auth.token.role;
+    }
+
+    // Les administrateurs doivent s'être connectés avec le double facteur.
+    function doubleFacteur() {
+      return request.auth.token.firebase.get('sign_in_second_factor', null) != null;
+    }
+
+    function estEquipe() {
+      return connecte() && role() in ['super_admin', 'admin', 'analyste'] && doubleFacteur();
+    }
+
+    function estAdmin() {
+      return connecte() && role() in ['super_admin', 'admin'] && doubleFacteur();
+    }
+
+    function profil() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Compte actif ET identité vérifiée : condition pour voir une opération du Cercle.
+    function investisseurVerifie() {
+      return connecte()
+        && role() in ['membre', 'partenaire', 'partenaire_strategique']
+        && profil().statut == 'actif'
+        && profil().kycStatut == 'valide';
+    }
+
+    // Un membre voit les opérations PME ; un partenaire voit aussi les opérations Entreprises.
+    function visiblePourMonNiveau(visibilite) {
+      return visibilite == 'membre'
+        || (visibilite == 'partenaire' && role() in ['partenaire', 'partenaire_strategique']);
+    }
+
+    // ----- Par défaut : rien -----
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ----- Profils -----
+
+    match /users/{uid} {
+      allow read: if connecte() && (request.auth.uid == uid || estEquipe());
+      // L'utilisateur ne modifie que ses informations personnelles, jamais
+      // son rôle, son niveau, son statut ou sa vérification d'identité.
+      allow update: if connecte() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['nom', 'prenom', 'ville', 'pays', 'majLe']);
+      allow create, delete: if false;
+    }
+
+    // Pièces KYC : seulement les chemins des fichiers, jamais les images.
+    match /kyc/{uid} {
+      allow read: if connecte() && (request.auth.uid == uid || estEquipe());
+      allow write: if false;
+    }
+
+    // ----- Accès au Cercle -----
+
+    // Invitations nominatives : visibles des administrateurs seulement.
+    // Le code est vérifié côté serveur par la fonction « inscrire ».
+    match /invitations/{code} {
+      allow read: if estAdmin();
+      allow write: if false;
+    }
+
+    // Candidatures : la personne voit la sienne, les administrateurs voient tout.
+    match /candidatures/{uid} {
+      allow read: if connecte() && (request.auth.uid == uid || estAdmin());
+      allow write: if false;
+    }
+
+    // Journal d'audit : lecture par les administrateurs, jamais modifiable.
+    match /audit/{id} {
+      allow read: if estAdmin();
+      allow write: if false;
+    }
+
+    // ----- Opérations -----
+
+    match /operations/{operationId} {
+      allow read: if estEquipe()
+        || (investisseurVerifie()
+            && resource.data.statut == 'financement_ouvert'
+            && visiblePourMonNiveau(resource.data.visibilite))
+        || (connecte() && role() == 'entreprise' && resource.data.entrepriseUid == request.auth.uid)
+        || (connecte() && role() == 'notaire' && resource.data.notaireUid == request.auth.uid)
+        || (connecte() && role() == 'fournisseur' && request.auth.uid in resource.data.get('fournisseurUids', []));
+      allow write: if false;
+
+      function operation() {
+        return get(/databases/$(database)/documents/operations/$(operationId)).data;
+      }
+
+      match /evenements/{eventId} {
+        allow read: if estEquipe()
+          || (connecte() && role() == 'entreprise' && operation().entrepriseUid == request.auth.uid)
+          || (connecte() && role() == 'notaire' && operation().notaireUid == request.auth.uid);
+        allow write: if false;
+      }
+
+      // Une entreprise ne voit JAMAIS les participations ni l'identité des investisseurs.
+      match /participations/{participationId} {
+        allow read: if estEquipe()
+          || (connecte() && resource.data.uid == request.auth.uid)
+          || (connecte() && role() == 'notaire' && operation().notaireUid == request.auth.uid);
+        // Intention de participation : champs limités, statut imposé.
+        allow create: if investisseurVerifie()
+          && operation().statut == 'financement_ouvert'
+          && visiblePourMonNiveau(operation().visibilite)
+          && request.resource.data.keys().hasOnly(['uid', 'montant', 'statut', 'creeLe'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.statut == 'en_attente_versement'
+          && request.resource.data.montant is int
+          && request.resource.data.montant >= operation().minParticipant
+          && request.resource.data.montant <= operation().maxParticipant
+          && request.resource.data.creeLe == request.time;
+        // Pas de suppression : seulement une annulation tracée par une Cloud Function.
+        allow update, delete: if false;
+      }
+    }
+
+    // ----- Paiements CinetPay et paramètres -----
+
+    match /paiements/{paiementId} {
+      allow read: if connecte() && (resource.data.uid == request.auth.uid || estAdmin());
+      allow write: if false;
+    }
+
+    match /parametres/{document} {
+      allow read: if estEquipe();
+      allow write: if false;
+    }
+  }
+}

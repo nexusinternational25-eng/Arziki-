@@ -1,0 +1,111 @@
+# Construction automatique de l'APK ARZIKI (CLAUDE.md, section 16, option B).
+# L'APK est téléchargeable dans l'onglet « Actions » de GitHub, rubrique « Artifacts ».
+#
+# Secrets GitHub (Settings > Secrets and variables > Actions) :
+#   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD : clé de signature
+#   GOOGLE_SERVICES_JSON : fichier google-services.json (mode production)
+# Sans ces secrets, l'APK est construit en mode démonstration et signé avec
+# une clé de test : parfait pour essayer, mais pas pour Google Play.
+
+name: Construire l'APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Mode de l'application"
+        type: choice
+        options: [demo, prod]
+        default: demo
+
+jobs:
+  verifier:
+    name: Analyse et tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Cloud Functions et règles de sécurité
+        working-directory: functions
+        run: |
+          npm ci
+          npm run build
+          npm test
+          npm run test:regles
+
+  apk:
+    name: APK Android
+    needs: verifier
+    runs-on: ubuntu-latest
+    env:
+      MODE: ${{ github.event.inputs.mode || 'demo' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Clé de signature
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/arziki-release.jks
+            {
+              echo "storeFile=arziki-release.jks"
+              echo "storePassword=$KEYSTORE_PASSWORD"
+              echo "keyAlias=$KEY_ALIAS"
+              echo "keyPassword=$KEY_PASSWORD"
+            } > android/key.properties
+          else
+            echo "Pas de clé de signature : APK signé avec la clé de test."
+          fi
+
+      - name: Configuration Firebase
+        if: env.MODE == 'prod'
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::Le mode production demande le secret GOOGLE_SERVICES_JSON."
+            exit 1
+          fi
+          echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      - run: flutter pub get
+      - name: Construire
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define-from-file=config/firebase.json \
+            --dart-define=APP_MODE=$MODE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arziki-apk-${{ env.MODE }}-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 30

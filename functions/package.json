@@ -1,0 +1,26 @@
+{
+  "name": "arziki-functions",
+  "private": true,
+  "description": "Cloud Functions ARZIKI : toute la logique sensible (rôles, accès, statuts, montants).",
+  "main": "lib/src/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').copyFileSync('../config/firebase.json','lib/src/firebase.json')\"",
+    "test": "vitest run test/acces.test.ts",
+    "test:regles": "firebase emulators:exec --config ../firebase.json --only firestore,storage --project demo-arziki \"vitest run test/regles.test.ts\"",
+    "creer-super-admin": "npm run build && node lib/scripts/creer-super-admin.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.1.0",
+    "firebase-tools": "^15.34.2",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

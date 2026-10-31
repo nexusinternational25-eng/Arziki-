@@ -423,3 +423,18 @@ La règle légale n° 3 reste entière : **aucune opération n'est visible par u
 ### 21.3 Supports de communication
 
 Deux affiches fournies portent la mention « Croissance garantie ». Elle est contraire à la règle légale n° 2 et ne doit apparaître **ni dans l'application ni dans ses fiches Google Play**. Un test automatique (`test/textes_test.dart`) bloque ces formules dans le code.
+
+### 21.4 Compléments au modèle de données (section 13)
+
+```
+candidatures/{uid}     uid, nomComplet, telephone, niveauSouhaite, trancheEnvisagee,
+                       commentNousConnu, soumiseLe, statut (soumise|admise|refusee),
+                       decidePar, decideLe, motif
+kyc/{uid}              pieces{code: chemin Cloud Storage}, origineFonds, soumisLe
+invitations/{code}     + note, creeLe, annuleeLe
+operations/{id}        + entrepriseUid, fournisseurUids[] (copies des identifiants,
+                       nécessaires aux règles de sécurité)
+users/{uid}.role       + valeur candidat_cercle
+```
+
+Cloud Functions ajoutées : `inscrire` (crée le profil après la vérification du numéro par SMS et consomme l'invitation), `annulerInvitation`, `deposerCandidature`, `deciderCandidature`, `soumettreKyc`, `demanderComplementKyc`, `changerStatutCompte`, `creerCompteEquipe`, `signalerAccesRefuse`. Les actions d'administration exigent le double facteur dans le jeton (`firebase.sign_in_second_factor`), côté fonctions comme côté règles.
