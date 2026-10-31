@@ -186,13 +186,18 @@ void main() {
       final cree = await comptes.creerCompteEquipe(
           acteur: superAdmin(), prenom: 'Kafui', nom: 'Doe', email: 'kafui@arziki.tg', role: Role.analyste);
       expect(cree.role, Role.analyste);
-      await auth.connecterAdmin('kafui@arziki.tg', 'demo1234');
+      final provisoire = comptes.motsDePasseProvisoires[cree.uid]!;
+      expect(provisoire, isNot('demo1234'));
+      await expectLater(auth.connecterAdmin('kafui@arziki.tg', 'demo1234'), throwsA(isA<ErreurAuth>()));
+      await auth.connecterAdmin('kafui@arziki.tg', provisoire);
       expect((await auth.verifierDoubleFacteur('123456')).uid, cree.uid);
     });
 
     test('un compte suspendu ne peut plus se connecter à la console', () async {
-      await comptes.suspendre(acteur: superAdmin(), uid: 'u-admin', motif: 'départ');
-      await auth.connecterAdmin('afi@arziki.demo', 'demo1234');
+      final cree = await comptes.creerCompteEquipe(
+          acteur: superAdmin(), prenom: 'Afi', nom: 'Doe', email: 'afi@arziki.tg', role: Role.admin);
+      await comptes.suspendre(acteur: superAdmin(), uid: cree.uid, motif: 'départ');
+      await auth.connecterAdmin('afi@arziki.tg', comptes.motsDePasseProvisoires[cree.uid]!);
       expect(() => auth.verifierDoubleFacteur('123456'), throwsA(isA<ErreurAuth>()));
     });
   });

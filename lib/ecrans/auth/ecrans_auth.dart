@@ -80,9 +80,19 @@ class ChampTelephone extends StatelessWidget {
 
 /// Champ pour un code à 6 chiffres.
 class ChampCode extends StatelessWidget {
-  const ChampCode({super.key, required this.controleur, this.libelle = 'Code reçu par SMS'});
+  const ChampCode({
+    super.key,
+    required this.controleur,
+    this.libelle = 'Code reçu par SMS',
+    this.aideDemo = true,
+    this.onSubmitted,
+  });
   final TextEditingController controleur;
   final String libelle;
+
+  /// Afficher le code simulé (jamais pour la double vérification des administrateurs).
+  final bool aideDemo;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -91,9 +101,10 @@ class ChampCode extends StatelessWidget {
       keyboardType: TextInputType.number,
       autofocus: true,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+      onSubmitted: onSubmitted,
       decoration: InputDecoration(
         labelText: libelle,
-        helperText: AppConfig.estDemo ? 'Démonstration : le code est ${AppConfig.codeSmsDemo}' : null,
+        helperText: AppConfig.estDemo && aideDemo ? 'Démonstration : le code est ${AppConfig.codeSmsDemo}' : null,
         helperMaxLines: 2,
       ),
     );
@@ -395,7 +406,7 @@ class _EcranConnexionState extends ConsumerState<EcranConnexion> {
 }
 
 // ---------------------------------------------------------------------------
-// Connexion administrateur : e-mail + mot de passe, puis double facteur
+// Connexion administrateur : identifiant + mot de passe, puis double facteur
 // ---------------------------------------------------------------------------
 
 class EcranConnexionAdmin extends ConsumerStatefulWidget {
@@ -441,9 +452,10 @@ class _EcranConnexionAdminState extends ConsumerState<EcranConnexionAdmin> {
         const SizedBox(height: ArzikiEspaces.l),
         TextField(
           controller: _email,
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email],
-          decoration: const InputDecoration(labelText: 'Adresse e-mail'),
+          autocorrect: false,
+          enableSuggestions: false,
+          autofillHints: const [AutofillHints.username],
+          decoration: const InputDecoration(labelText: 'Identifiant'),
         ),
         const SizedBox(height: ArzikiEspaces.m),
         TextField(
@@ -460,13 +472,6 @@ class _EcranConnexionAdminState extends ConsumerState<EcranConnexionAdmin> {
             ),
           ),
         ),
-        if (AppConfig.estDemo) ...[
-          const SizedBox(height: ArzikiEspaces.s),
-          const Encadre(
-            'Démonstration : admin@arziki.demo (super administrateur), afi@arziki.demo (administrateur), '
-            'analyste@arziki.demo (analyste). Mot de passe : demo1234.',
-          ),
-        ],
         if (_erreur != null) ...[
           const SizedBox(height: ArzikiEspaces.m),
           Encadre(_erreur!, type: TypeEncadre.erreur),
@@ -512,11 +517,16 @@ class _EcranDoubleFacteurState extends ConsumerState<EcranDoubleFacteur> {
       appBar: AppBar(title: const Text('Double vérification')),
       body: Colonne(children: [
         const Text(
-          'Pour protéger la console, saisissez le code à 6 chiffres envoyé sur votre téléphone '
-          "ou affiché dans votre application d'authentification.",
+          "Ouvrez votre application d'authentification (Google Authenticator, Microsoft Authenticator...) "
+          'et saisissez le code à 6 chiffres affiché pour ARZIKI. Il change toutes les 30 secondes.',
         ),
         const SizedBox(height: ArzikiEspaces.l),
-        ChampCode(controleur: _code, libelle: 'Code de vérification'),
+        ChampCode(
+          controleur: _code,
+          libelle: 'Code à 6 chiffres',
+          aideDemo: false,
+          onSubmitted: (_) => _verifier(),
+        ),
         if (_erreur != null) ...[
           const SizedBox(height: ArzikiEspaces.m),
           Encadre(_erreur!, type: TypeEncadre.erreur),

@@ -36,13 +36,16 @@ flutter test
 ## Mode démonstration
 
 Tant que le projet Firebase n'est pas fourni, l'application tourne avec des données fictives
-(bandeau jaune « Démonstration »). Le code SMS est toujours `123456`.
+(bandeau jaune « Démonstration »). Le code SMS des comptes clients est toujours `123456`.
+
+La console d'administration, elle, n'a aucun accès de démonstration : elle s'ouvre uniquement
+avec l'identifiant du super administrateur, son mot de passe et le code à 6 chiffres de son
+application d'authentification (voir `lib/auth/acces_admin.dart`). Le dépôt ne contient que
+l'empreinte du mot de passe, jamais le mot de passe lui-même.
 
 | Profil | Connexion |
 |---|---|
-| Super administrateur | `admin@arziki.demo` / `demo1234`, puis code `123456` |
-| Administrateur | `afi@arziki.demo` / `demo1234` |
-| Analyste | `analyste@arziki.demo` / `demo1234` |
+| Super administrateur | identifiant personnel, mot de passe et code à 6 chiffres (remis au propriétaire, jamais écrits dans le dépôt) |
 | Membre du Cercle | téléphone `90 00 00 21` |
 | Partenaire | téléphone `90 00 00 31` |
 | Entreprise | téléphone `90 00 00 11` |

@@ -12,6 +12,9 @@ class DepotComptesDemo implements DepotComptes {
 
   final BaseDemo base;
 
+  /// Mots de passe provisoires des comptes d'équipe créés pendant la démonstration.
+  final Map<String, String> motsDePasseProvisoires = {};
+
   Utilisateur _compte(String uid) {
     final u = base.utilisateurs[uid];
     if (u == null) throw const ErreurAcces('Compte introuvable.');
@@ -295,7 +298,7 @@ class DepotComptesDemo implements DepotComptes {
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e)) {
       throw const ErreurAcces('Adresse e-mail invalide.');
     }
-    if (base.comptesAdmin.any((c) => c.email == e)) {
+    if (base.comptesAdmin.any((c) => c.identifiant == e)) {
       throw const ErreurAcces('Cette adresse e-mail est déjà utilisée.');
     }
     final uid = base.nouvelId('u-equipe');
@@ -310,9 +313,12 @@ class DepotComptesDemo implements DepotComptes {
       creeLe: base.maintenant(),
     );
     _enregistrer(u);
-    // En démonstration, mot de passe provisoire connu. En production, la personne
-    // reçoit un lien pour choisir son mot de passe et activer le double facteur.
-    base.comptesAdmin.add(CompteAdminDemo(e, 'demo1234', uid));
+    // En démonstration, mot de passe provisoire tiré au hasard, affiché une seule fois
+    // au super administrateur. En production, la personne reçoit un lien pour choisir
+    // son mot de passe et activer le double facteur.
+    final provisoire = Invitation.genererCode().replaceFirst('ARZ-', '');
+    base.comptesAdmin.add(CompteAdminDemo(e, provisoire, uid));
+    motsDePasseProvisoires[uid] = provisoire;
     base.auditer(acteur.uid, 'creer_compte_equipe', 'users/$uid', apres: role.code);
     return u;
   }

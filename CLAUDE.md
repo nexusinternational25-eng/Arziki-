@@ -419,6 +419,7 @@ La règle légale n° 3 reste entière : **aucune opération n'est visible par u
 - Le compte `super_admin` du propriétaire n'est **jamais** créé depuis l'application : il est créé une seule fois par le script `functions/scripts/creer-super-admin.ts` (custom claim posé avec les droits du projet Firebase).
 - Chaque collaborateur a **son propre compte** (`admin` ou `analyste`), créé uniquement par le `super_admin` depuis la page « Équipe » ; il reçoit un lien pour choisir son mot de passe et active son double facteur. Personne ne modifie son propre rôle ; seul le `super_admin` touche aux comptes d'administration.
 - Les administrateurs ne se connectent jamais par SMS : uniquement e-mail + mot de passe + double facteur.
+- **Console en mode démonstration** (décision du 31 octobre 2026) : aucun compte d'administration de démonstration, aucun identifiant affiché à l'écran ni sur le site. Seul le super administrateur entre, avec son identifiant (`oumara`), son mot de passe et le code à 6 chiffres de son application d'authentification (TOTP). Le dépôt ne contient que l'empreinte PBKDF2 du mot de passe et la clé TOTP chiffrée par ce mot de passe (`lib/auth/acces_admin.dart`) ; ne jamais y écrire le mot de passe ni la clé en clair. Blocage de 15 minutes après 5 erreurs. Pour changer le mot de passe, générer de nouvelles valeurs (sel, empreinte, clé chiffrée) et les remettre au propriétaire seulement.
 
 ### 21.3 Supports de communication
 

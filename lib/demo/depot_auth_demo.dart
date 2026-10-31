@@ -1,6 +1,7 @@
-// Authentification de démonstration : SMS simulé (code 123456),
-// connexion admin par e-mail + mot de passe + double facteur simulé.
+// Authentification de démonstration : SMS simulé (code 123456) pour les clients ;
+// pour l'administration, vrai contrôle du mot de passe et du code à 6 chiffres.
 
+import '../auth/acces_admin.dart';
 import '../auth/depot_auth.dart';
 import '../comptes/depot_comptes.dart';
 import '../config/app_config.dart';
@@ -10,18 +11,19 @@ import 'base_demo.dart';
 import 'depot_comptes_demo.dart';
 
 class DepotAuthDemo implements DepotAuth {
-  DepotAuthDemo(this.base, this.comptes);
+  DepotAuthDemo(this.base, this.comptes, {this.proprietaire = ParametresAccesAdmin.proprietaire});
 
   final BaseDemo base;
   final DepotComptesDemo comptes;
+
+  /// Paramètres du compte du super administrateur (remplaçables dans les tests).
+  final ParametresAccesAdmin proprietaire;
 
   // Limitation des tentatives (CLAUDE.md, section 14).
   static const int maxSmsParHeure = 5;
   static const int maxEchecs = 5;
   final Map<String, List<DateTime>> _envoisSms = {};
   final Map<String, int> _echecs = {};
-
-  String? _adminEnAttente2fa;
 
   void _verifierCode(String cle, String code) {
     if ((_echecs[cle] ?? 0) >= maxEchecs) {
@@ -94,27 +96,77 @@ class DepotAuthDemo implements DepotAuth {
     return u;
   }
 
+  // ----- Administration -----
+  // Super administrateur : identifiant + mot de passe (empreinte PBKDF2) + code
+  // à 6 chiffres de son application d'authentification (TOTP).
+  // Après 5 erreurs, l'identifiant est bloqué 15 minutes.
+
+  final Map<String, DateTime> _bloqueJusquA = {};
+  String? _adminEnAttente;
+  List<int>? _cleTotpEnAttente;
+
+  void _verifierBlocage(String cle) {
+    final fin = _bloqueJusquA[cle];
+    if (fin != null && base.maintenant().isBefore(fin)) {
+      throw const ErreurAuth('Trop de tentatives. Accès bloqué pendant 15 minutes.');
+    }
+  }
+
+  void _echec(String cle) {
+    final n = (_echecs[cle] ?? 0) + 1;
+    _echecs[cle] = n;
+    if (n >= maxEchecs) {
+      _bloqueJusquA[cle] = base.maintenant().add(const Duration(minutes: 15));
+      _echecs.remove(cle);
+    }
+  }
+
   @override
-  Future<void> connecterAdmin(String email, String motDePasse) async {
-    final e = email.trim().toLowerCase();
-    if ((_echecs[e] ?? 0) >= maxEchecs) {
-      throw const ErreurAuth('Trop de tentatives. Réessayez dans 15 minutes.');
+  Future<void> connecterAdmin(String identifiant, String motDePasse) async {
+    final id = identifiant.trim().toLowerCase();
+    _verifierBlocage(id);
+    _adminEnAttente = null;
+    _cleTotpEnAttente = null;
+
+    if (id == proprietaire.identifiant) {
+      final cle = verifierMotDePasse(proprietaire, motDePasse);
+      if (cle != null) {
+        _adminEnAttente = proprietaire.uid;
+        _cleTotpEnAttente = cle;
+        return;
+      }
+    } else {
+      final compte = base.comptesAdmin.where((c) => c.identifiant == id && c.motDePasse == motDePasse);
+      if (compte.isNotEmpty) {
+        _adminEnAttente = compte.first.uid;
+        return;
+      }
     }
-    final compte = base.comptesAdmin.where((c) => c.email == e && c.motDePasse == motDePasse);
-    if (compte.isEmpty) {
-      _echecs[e] = (_echecs[e] ?? 0) + 1;
-      throw const ErreurAuth('Adresse e-mail ou mot de passe incorrect.');
-    }
-    _echecs.remove(e);
-    _adminEnAttente2fa = compte.first.uid;
+    _echec(id);
+    base.auditer('inconnu', 'connexion_admin_refusee', id);
+    // Même message dans tous les cas : on ne dit pas si l'identifiant existe.
+    throw const ErreurAuth('Identifiant ou mot de passe incorrect.');
   }
 
   @override
   Future<Utilisateur> verifierDoubleFacteur(String code) async {
-    final uid = _adminEnAttente2fa;
+    final uid = _adminEnAttente;
     if (uid == null) throw const ErreurAuth('Reprenez la connexion depuis le début.');
-    _verifierCode('2fa-$uid', code);
-    _adminEnAttente2fa = null;
+    final cleBlocage = '2fa-$uid';
+    _verifierBlocage(cleBlocage);
+
+    final cle = _cleTotpEnAttente;
+    final bon = cle != null
+        ? verifierCodeTotp(cle, code, base.maintenant())
+        // Comptes d'équipe créés pendant la démonstration : code simulé.
+        : code.trim() == AppConfig.codeSmsDemo;
+    if (!bon) {
+      _echec(cleBlocage);
+      throw const ErreurAuth('Code incorrect. Saisissez le code affiché dans votre application d\'authentification.');
+    }
+    _echecs.remove(cleBlocage);
+    _adminEnAttente = null;
+    _cleTotpEnAttente = null;
     final u = base.utilisateurs[uid]!;
     if (u.statut == StatutCompte.suspendu) throw const ErreurAuth('Ce compte est suspendu.');
     base.auditer(uid, 'connexion_admin', 'users/$uid');
@@ -123,6 +175,7 @@ class DepotAuthDemo implements DepotAuth {
 
   @override
   Future<void> deconnecter() async {
-    _adminEnAttente2fa = null;
+    _adminEnAttente = null;
+    _cleTotpEnAttente = null;
   }
 }

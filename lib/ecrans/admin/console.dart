@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/session.dart';
 import '../../comptes/depot_comptes.dart';
 import '../../core/roles.dart';
+import '../../demo/depot_comptes_demo.dart';
 import '../../models/acces.dart';
 import '../../models/utilisateur.dart';
 import '../../router/garde_roles.dart';
@@ -760,15 +761,31 @@ class _PageEquipeState extends ConsumerState<PageEquipe> with _Rechargeable {
       ),
     );
     if (ok != true) return;
-    await executer(
-      () => ref.read(depotComptesProvider).creerCompteEquipe(
-            acteur: acteur,
-            prenom: prenom.text,
-            nom: nom.text,
-            email: email.text,
-            role: role,
-          ),
-      'Compte créé. La personne recevra un lien pour choisir son mot de passe.',
+    final depot = ref.read(depotComptesProvider);
+    Utilisateur? cree;
+    await executer(() async {
+      cree = await depot.creerCompteEquipe(
+        acteur: acteur,
+        prenom: prenom.text,
+        nom: nom.text,
+        email: email.text,
+        role: role,
+      );
+    }, 'Compte créé.');
+    // Démonstration : le mot de passe provisoire est montré une seule fois.
+    // Production : la personne reçoit un lien pour choisir son mot de passe.
+    final provisoire = cree == null || depot is! DepotComptesDemo ? null : depot.motsDePasseProvisoires[cree!.uid];
+    if (provisoire == null || !mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Accès du collaborateur'),
+        content: SelectableText(
+          'Identifiant : ${cree!.email}\nMot de passe provisoire : $provisoire\n\n'
+          "Transmettez-le en main propre. Il n'apparaîtra plus.",
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer'))],
+      ),
     );
   }
 }

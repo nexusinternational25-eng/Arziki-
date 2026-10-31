@@ -7,9 +7,11 @@ import '../core/roles.dart';
 import '../models/acces.dart';
 import '../models/utilisateur.dart';
 
+/// Compte d'équipe créé pendant la démonstration par le super administrateur
+/// (mot de passe provisoire généré au hasard, gardé en mémoire seulement).
 class CompteAdminDemo {
-  const CompteAdminDemo(this.email, this.motDePasse, this.uid);
-  final String email;
+  const CompteAdminDemo(this.identifiant, this.motDePasse, this.uid);
+  final String identifiant;
   final String motDePasse;
   final String uid;
 }
@@ -83,16 +85,14 @@ class BaseDemo {
   }
 
   void _remplir() {
-    // Administration (connexion par e-mail + mot de passe + double facteur).
+    // Administration. Seul le super administrateur peut se connecter : identifiant
+    // personnel, mot de passe et code à 6 chiffres (voir lib/auth/acces_admin.dart).
+    // Les deux collaborateurs fictifs servent à remplir la page « Équipe » ;
+    // ils n'ont pas de mot de passe et ne peuvent pas se connecter.
     _ajouter('u-super-admin', Role.superAdmin, 'Oumara', 'Moussa Saley Zouzou',
-        email: 'admin@arziki.demo', telephone: '+22890000001');
-    _ajouter('u-admin', Role.admin, 'Afi', 'Mensah', email: 'afi@arziki.demo');
-    _ajouter('u-analyste', Role.analyste, 'Kossi', 'Agbeko', email: 'analyste@arziki.demo');
-    comptesAdmin.addAll(const [
-      CompteAdminDemo('admin@arziki.demo', 'demo1234', 'u-super-admin'),
-      CompteAdminDemo('afi@arziki.demo', 'demo1234', 'u-admin'),
-      CompteAdminDemo('analyste@arziki.demo', 'demo1234', 'u-analyste'),
-    ]);
+        email: 'oumara', telephone: '+22890000001');
+    _ajouter('u-admin', Role.admin, 'Afi', 'Mensah', email: 'afi.mensah');
+    _ajouter('u-analyste', Role.analyste, 'Kossi', 'Agbeko', email: 'kossi.agbeko');
 
     // Entreprises (pharmacie, BTP, fournisseur d'une mine).
     _ajouter('u-ent-pharma', Role.entreprise, 'Ama', 'Kpodar', telephone: '+22890000011');
