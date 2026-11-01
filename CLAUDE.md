@@ -465,3 +465,8 @@ Le propriétaire n'est pas développeur. Claude Code travaille comme un chef de 
 - Lien direct et permanent de l'APK : https://github.com/nexusinternational25-eng/Arziki-/releases/latest/download/ARZIKI.apk
 - Banque d'images : `assets/images` (27 photos, liste dans `lib/core/images.dart`). La photo n° 13 du document fourni est écartée (drapeau), la n° 16 est recadrée.
 - Logo principal : le « A » au chariot (`assets/logo/arziki_logo.png`, version blanche pour les fonds verts et le mode sombre, symbole seul pour l'icône).
+
+### 22.2 Nom du propriétaire et textes légaux (décision du 1er novembre 2026)
+
+- Le nom du propriétaire n'apparaît **nulle part** dans l'application, la console ni le site : on écrit seulement « CEO de NEXUS International ». Le test `test/refonte_test.dart` le vérifie.
+- Les textes légaux sont publiés en **version 1.0** (1er novembre 2026), sans mention « provisoire » ni « en attente de validation ». Toute révision par l'avocat donnera une nouvelle version (1.1, 2.0...), que les utilisateurs accepteront de nouveau.

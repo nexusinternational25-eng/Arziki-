@@ -264,10 +264,15 @@ class _FeuilleParticipationState extends ConsumerState<_FeuilleParticipation> {
                 title: const Text('Contrat de participation'),
                 content: const SingleChildScrollView(
                   child: Text(
-                    "Modèle provisoire, en attente de validation par l'avocat.\n\n"
-                    'Le participant verse sa participation sur le compte séquestre du notaire. Il reçoit, à la clôture, '
-                    'sa part de la marge nette réelle au prorata de son versement confirmé, ou supporte sa part de la '
-                    'perte selon le contrat. ${TextesLegaux.avertissementRisque}',
+                    'Objet : le participant engage une somme dans l\'opération commerciale décrite dans la fiche, '
+                    'aux côtés des autres participants.\n\n'
+                    'Versement : la somme est versée par virement ou mobile money sur le compte séquestre du notaire, '
+                    'avec la référence indiquée. La participation est confirmée après vérification de la preuve.\n\n'
+                    'Rémunération : à la clôture, le participant reçoit sa part de la marge nette réelle, au prorata '
+                    'de son versement confirmé, selon la répartition prévue dans la fiche et les actes notariés.\n\n'
+                    'Durée : la somme est immobilisée jusqu\'à la clôture de l\'opération.\n\n'
+                    'Annulation : si le financement n\'est pas réuni à la date limite, la somme est restituée par le notaire.\n\n'
+                    'Risque : le participant supporte sa part d\'une éventuelle perte, selon le contrat. ${TextesLegaux.avertissementRisque}',
                   ),
                 ),
                 actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer'))],

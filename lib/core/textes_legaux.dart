@@ -1,12 +1,12 @@
 // Textes légaux et vocabulaire réglementé (CLAUDE.md, sections 1 et 14).
-// Les versions définitives seront fournies par l'avocat du propriétaire.
+// Version 1.0 publiée le 1er novembre 2026 (décision du propriétaire).
 
 class TextesLegaux {
   TextesLegaux._();
 
   /// Version des conditions d'utilisation et de la politique de confidentialité.
   /// Toute modification du texte impose d'augmenter ce numéro.
-  static const String versionConditions = '1.0-provisoire';
+  static const String versionConditions = '1.0';
 
   /// Avertissement de risque, affiché sur chaque fiche d'opération et avant chaque participation.
   static const String avertissementRisque =

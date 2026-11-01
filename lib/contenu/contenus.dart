@@ -1,7 +1,7 @@
 // Contenus éditoriaux d'ARZIKI : pages d'information, FAQ, actualités, contacts.
 // Tous ces textes sont modifiables depuis la console d'administration
 // (page « Contenus ») ; chaque modification est inscrite au journal d'audit.
-// Les textes légaux sont provisoires, en attente de validation par l'avocat.
+// Les textes légaux sont rédigés et publiés en version 1.0 (décision du propriétaire).
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -124,9 +124,9 @@ final Map<String, PageContenu> pagesParDefaut = {
           "Transparence : chaque participant voit les étapes, les documents et les résultats de l'opération.\n"
               'Rigueur : chaque acheteur et chaque commande sont vérifiés par notre équipe avant toute décision.\n'
               'Respect : des engagements écrits, un notaire à chaque étape, et une relation de long terme avec nos clients.'),
-      SectionContenu('Le fondateur',
-          'MOUSSA SALEY ZOUZOU OUMARA est conseiller en investissement certifié USAID et fondateur de '
-              'NEXUS International. Il a accompagné des financements validés de 30 millions et de 160 millions '
+      SectionContenu('La direction',
+          'ARZIKI est dirigée par le CEO de NEXUS International, conseiller en investissement certifié USAID. '
+              'Il a accompagné des financements validés de 30 millions et de 160 millions '
               "de dollars américains, et mobilisé plusieurs centaines de millions de FCFA pour plus d'une "
               "centaine d'entreprises."),
       SectionContenu('Une offre de NEXUS International',
@@ -235,24 +235,73 @@ final Map<String, PageContenu> pagesParDefaut = {
     titre: "Conditions d'utilisation",
     version: TextesLegaux.versionConditions,
     majLe: _dateVersion,
-    intro: "Version provisoire, en attente de validation par l'avocat de NEXUS International.",
+    intro: "Les présentes conditions générales d'utilisation (les « Conditions ») encadrent l'accès et l'utilisation "
+        "de l'application ARZIKI et de son site. En créant un compte, vous les acceptez sans réserve.",
     sections: const [
-      SectionContenu('Objet',
-          "Les présentes conditions encadrent l'utilisation de l'application ARZIKI, éditée par NEXUS International, "
-              'qui met en relation des entreprises ayant une commande ferme, des fournisseurs, des notaires et les '
-              "membres d'un cercle privé de participants."),
-      SectionContenu('Accès',
-          "L'inscription est personnelle. L'accès aux opérations du Cercle est réservé aux personnes invitées ou "
-              "admises, dont l'identité et l'origine des fonds ont été vérifiées."),
-      SectionContenu('Engagements',
-          "Chaque utilisateur s'engage à fournir des informations exactes et des documents authentiques. ARZIKI "
-              'peut suspendre un compte en cas de manquement.'),
-      SectionContenu('Fonds',
-          'ARZIKI ne détient jamais les fonds des opérations. Les frais de service et les cotisations sont encaissés '
-              'par un agrégateur de paiement agréé.'),
-      SectionContenu('Responsabilité',
-          'Les participations comportent un risque de perte. Les marges indiquées sont des objectifs. Les actes '
-              'notariés font foi en cas de différence avec les informations affichées.'),
+      SectionContenu('1. Éditeur',
+          'ARZIKI est éditée par NEXUS International, RCCM TG-LFW-01-2025-A10-03200, dont le siège est situé '
+              '18 rue Léopold Sédar Senghor, Tokoin Wuiti, Lomé, Togo (« NEXUS International » ou « ARZIKI »).'),
+      SectionContenu('2. Objet du service',
+          "ARZIKI organise la Commande Financée : une entreprise titulaire d'une commande ferme d'un acheteur "
+              "identifié obtient le financement de l'achat de la marchandise, soit auprès d'un fournisseur qui accepte "
+              "d'être payé plus tard, soit auprès des membres du Cercle Arziki, cercle privé de participants. ARZIKI "
+              'vérifie les dossiers, coordonne les intervenants et rend compte de chaque étape. Chaque opération est '
+              'encadrée par un notaire partenaire. ARZIKI propose également des services de conseil opérés par NEXUS '
+              'International.'),
+      SectionContenu('3. Inscription et compte',
+          "L'inscription est réservée aux personnes majeures et aux entreprises régulièrement immatriculées. Le compte "
+              'est personnel : vous êtes responsable de la confidentialité de vos codes (code SMS, code PIN, mot de '
+              "passe) et de toute action réalisée depuis votre compte. Un compte reste en attente jusqu'à la "
+              "vérification de l'identité de son titulaire par ARZIKI, qui peut refuser une inscription sans avoir à "
+              'motiver sa décision.'),
+      SectionContenu('4. Accès au Cercle Arziki',
+          'Le Cercle est privé. On y entre uniquement sur invitation nominative ou après admission par un '
+              "administrateur, une fois l'identité et l'origine des fonds vérifiées. Les opérations ne sont visibles "
+              "que par les membres admis, selon leur niveau. Le Cercle ne s'adresse pas au public et ne constitue "
+              'pas une offre au public.'),
+      SectionContenu('5. Fonds des opérations',
+          'ARZIKI ne détient jamais les fonds des opérations et ne tient aucun compte au nom des utilisateurs. Les '
+              'versements des participants sont effectués par virement ou par mobile money directement au fournisseur '
+              "ou sur le compte séquestre du notaire, avec la référence indiquée dans l'application. Aucun versement en "
+              "espèces n'est accepté au-delà de 5 000 000 FCFA. La participation n'est confirmée qu'après "
+              'vérification de la preuve de versement.'),
+      SectionContenu('6. Nature des participations',
+          'Une participation est un engagement dans une opération commerciale, rémunéré par une part de la marge '
+              'nette réellement dégagée, selon le contrat de participation et les actes signés devant notaire. La '
+              'marge indiquée sur une fiche est un objectif. Le participant peut perdre tout ou partie de sa mise. '
+              "En cas de différence entre l'application et les actes notariés, les actes notariés font foi."),
+      SectionContenu('7. Obligations des utilisateurs',
+          "Chaque utilisateur s'engage à fournir des informations exactes et à jour, des documents authentiques, à "
+              "respecter les engagements pris dans le cadre d'une opération et à ne pas utiliser ARZIKI à des fins "
+              'frauduleuses, notamment de blanchiment de capitaux ou de financement du terrorisme. Toute déclaration '
+              'inexacte peut entraîner la suspension immédiate du compte.'),
+      SectionContenu('8. Frais et paiements',
+          'Les frais de dossier, les cotisations annuelles et les prix des services sont indiqués avant tout '
+              "paiement. Ils sont réglés par l'intermédiaire d'un agrégateur de paiement agréé (mobile money ou carte). "
+              'Les services sont payés à 50 % à la commande et à 50 % à la livraison ; les sommes versées ne sont plus '
+              'remboursables une fois le travail commencé. Un reçu est disponible dans l\'application.'),
+      SectionContenu('9. Signature électronique',
+          "La validation d'un engagement par case à cocher, code PIN et horodatage vaut signature électronique "
+              'simple. Elle complète les actes signés devant notaire, qui restent la référence.'),
+      SectionContenu('10. Responsabilité',
+          'ARZIKI met en œuvre les moyens nécessaires à la vérification des dossiers et au bon fonctionnement de '
+              "l'application, sans pouvoir répondre de la défaillance d'un acheteur, d'un fournisseur ou d'un autre "
+              'intervenant, ni des interruptions liées au réseau ou à un cas de force majeure.'),
+      SectionContenu('11. Suspension et clôture',
+          'ARZIKI peut suspendre ou clôturer un compte en cas de manquement aux présentes Conditions. Vous pouvez '
+              "demander la clôture de votre compte depuis Paramètres ; les engagements en cours restent dus jusqu'à "
+              'leur terme.'),
+      SectionContenu('12. Propriété intellectuelle',
+          'La marque ARZIKI, le logo, les textes, les images et le logiciel sont la propriété de NEXUS International. '
+              'Toute reproduction sans autorisation écrite est interdite.'),
+      SectionContenu('13. Modification des Conditions',
+          "ARZIKI peut modifier les présentes Conditions. La nouvelle version est notifiée dans l'application et doit "
+              'être acceptée pour continuer à utiliser le service.'),
+      SectionContenu('14. Droit applicable et litiges',
+          "Les présentes Conditions sont soumises au droit togolais et aux actes uniformes de l'OHADA. En cas de "
+              "différend, les parties recherchent d'abord une solution amiable ; à défaut, les juridictions "
+              'compétentes de Lomé sont seules saisies.'),
+      SectionContenu('15. Contact', 'NEXUS International, operation@amanexus.com, +228 91 97 80 80.'),
     ],
   ),
   PagesId.confidentialite: PageContenu(
@@ -260,21 +309,55 @@ final Map<String, PageContenu> pagesParDefaut = {
     titre: 'Politique de confidentialité',
     version: TextesLegaux.versionConditions,
     majLe: _dateVersion,
-    intro: 'Version provisoire, conforme aux principes de la loi togolaise n° 2019-014 sur la protection des '
-        "données personnelles, en attente de validation par l'avocat.",
+    intro: 'ARZIKI protège vos données personnelles conformément à la loi togolaise n° 2019-014 du 29 octobre 2019 '
+        'relative à la protection des données à caractère personnel. Cette politique explique quelles données nous '
+        'utilisons, pourquoi, et quels sont vos droits.',
     sections: const [
-      SectionContenu('Données collectées',
-          "Identité, coordonnées, pièces justificatives, informations sur votre entreprise ou l'origine de vos fonds, "
-              "et l'historique de vos opérations."),
-      SectionContenu('Utilisation',
-          'Vérifier votre identité, instruire les dossiers, respecter nos obligations légales et vous informer du '
-              "suivi de vos opérations. Aucune donnée n'est vendue."),
-      SectionContenu('Conservation et sécurité',
-          'Les pièces sont stockées de façon chiffrée. Les contrats et justificatifs sont conservés pendant la durée '
-              'imposée par la loi.'),
-      SectionContenu('Vos droits',
-          'Vous pouvez télécharger vos données et demander la suppression de votre compte depuis Paramètres, ou '
-              'écrire à operation@amanexus.com.'),
+      SectionContenu('1. Responsable du traitement',
+          'NEXUS International, RCCM TG-LFW-01-2025-A10-03200, 18 rue Léopold Sédar Senghor, Tokoin Wuiti, Lomé, '
+              'Togo. Contact : operation@amanexus.com.'),
+      SectionContenu('2. Données collectées',
+          "Identité (nom, prénom, date de naissance, pièce d'identité, selfie de contrôle), coordonnées (téléphone, "
+              'e-mail, adresse), informations sur votre entreprise (RCCM, NIF, statuts, dirigeants), informations '
+              'financières (origine des fonds, justificatifs bancaires, participations, paiements), documents des '
+              'opérations, et données techniques de connexion (date, appareil, journal des actions sensibles).'),
+      SectionContenu('3. Finalités',
+          "Créer et gérer votre compte ; vérifier votre identité et l'origine de vos fonds ; instruire les demandes "
+              'de Commande Financée ; gérer les opérations, les participations et les paiements ; vous informer de '
+              "l'avancement de vos dossiers ; respecter nos obligations légales, notamment en matière de lutte contre "
+              'le blanchiment de capitaux et le financement du terrorisme ; assurer la sécurité du service.'),
+      SectionContenu('4. Fondements',
+          "L'exécution du contrat qui vous lie à ARZIKI, le respect de nos obligations légales, notre intérêt "
+              'légitime à sécuriser le service et, pour les communications facultatives, votre consentement, que vous '
+              'pouvez retirer à tout moment dans Paramètres.'),
+      SectionContenu('5. Destinataires',
+          "Vos données sont accessibles uniquement aux personnes habilitées d'ARZIKI et, pour ce qui les concerne, "
+              "au notaire chargé de l'opération, aux autres parties à l'opération dans la limite nécessaire, à notre "
+              "agrégateur de paiement et à nos hébergeurs. Une entreprise ne voit jamais l'identité des participants. "
+              "Aucune donnée n'est vendue ni louée."),
+      SectionContenu('6. Hébergement et transferts',
+          "Les données de l'application sont hébergées par Google Cloud (Firebase) dans un centre de données situé "
+              'en Afrique du Sud (Johannesburg), avec des garanties contractuelles de protection. ARZIKI se conformera '
+              'à toute obligation de localisation des données fixée par l\'autorité togolaise.'),
+      SectionContenu('7. Durées de conservation',
+          "Les données du compte sont conservées pendant toute la durée de la relation. Les pièces d'identité, "
+              'contrats, justificatifs de paiement et documents des opérations sont conservés dix ans après la fin de '
+              "la relation, comme l'imposent les règles comptables OHADA et la réglementation contre le blanchiment. "
+              'Les données techniques de connexion sont conservées un an.'),
+      SectionContenu('8. Sécurité',
+          "Les documents sont stockés de façon chiffrée, dans un espace propre à chaque utilisateur. L'accès des "
+              'administrateurs exige une double vérification, toute action sensible est inscrite dans un journal '
+              "infalsifiable, et les captures d'écran sont bloquées sur les écrans de pièces d'identité et de "
+              'contrats.'),
+      SectionContenu('9. Vos droits',
+          "Vous disposez d'un droit d'accès, de rectification, d'opposition et de suppression de vos données, dans "
+              'la limite des durées légales de conservation. Vous pouvez télécharger vos données et demander la '
+              'suppression de votre compte depuis Paramètres, ou écrire à operation@amanexus.com. Nous répondons '
+              "dans un délai d'un mois. Vous pouvez également saisir l'Instance de protection des données à "
+              'caractère personnel (IPDCP).'),
+      SectionContenu('10. Modifications',
+          "Toute modification de cette politique vous est notifiée dans l'application, avec sa date et son numéro "
+              'de version.'),
     ],
   ),
   PagesId.risques: PageContenu(
@@ -284,12 +367,23 @@ final Map<String, PageContenu> pagesParDefaut = {
     majLe: _dateVersion,
     intro: TextesLegaux.avertissementRisque,
     sections: const [
-      SectionContenu('Risques principaux',
-          "Retard ou défaut de paiement de l'acheteur, retard de livraison, litige commercial, baisse de la marge "
-              'réelle par rapport à la marge visée.'),
-      SectionContenu('Ce que fait ARZIKI pour les limiter',
-          'Vérification de chaque commande, garanties proportionnées au montant, encadrement notarial, plafonds de '
-              'concentration par opération, par acheteur et par secteur.'),
+      SectionContenu('Les principaux risques',
+          "Retard ou défaut de paiement de l'acheteur final ; retard ou défaut de livraison du fournisseur ; litige "
+              'commercial sur la qualité ou la quantité livrée ; frais réels supérieurs aux frais prévus ; difficulté '
+              "de mise en œuvre d'une garantie. Chacun de ces événements peut réduire la marge réelle, retarder le "
+              'partage ou entraîner une perte partielle ou totale de la mise.'),
+      SectionContenu("Ce n'est pas une épargne disponible",
+          "Une participation est immobilisée jusqu'à la clôture de l'opération. Elle ne peut pas être retirée avant "
+              "le terme. Ne participez qu'avec des sommes dont vous n'avez pas besoin à court terme et répartissez vos "
+              'participations entre plusieurs opérations.'),
+      SectionContenu('Ce que fait ARZIKI pour limiter les risques',
+          "Vérification de chaque commande auprès de l'acheteur, contrôle du fournisseur et des prix, garanties "
+              'proportionnées au montant, encadrement notarial et compte séquestre, plafonds de concentration par '
+              'opération, par acheteur et par secteur, suivi des retards et rapport mensuel. Ces mesures réduisent les '
+              'risques sans les supprimer.'),
+      SectionContenu('Avant de participer',
+          "Lisez la fiche de l'opération et le contrat de participation, posez vos questions à l'équipe ARZIKI, et "
+              'vérifiez que le montant envisagé correspond à votre situation.'),
     ],
   ),
   PagesId.mentions: PageContenu(
@@ -297,12 +391,17 @@ final Map<String, PageContenu> pagesParDefaut = {
     titre: 'Mentions légales',
     version: TextesLegaux.versionConditions,
     majLe: _dateVersion,
-    intro: 'Informations sur l\'éditeur de l\'application ARZIKI.',
+    intro: "Informations sur l'éditeur et les hébergeurs de l'application ARZIKI.",
     sections: const [
       SectionContenu('Éditeur', 'NEXUS International\nRCCM TG-LFW-01-2025-A10-03200\n18 rue Léopold Sédar Senghor, Tokoin Wuiti, Lomé, Togo'),
-      SectionContenu('Directeur de la publication', 'MOUSSA SALEY ZOUZOU OUMARA'),
+      SectionContenu('Directeur de la publication', 'Le CEO de NEXUS International'),
       SectionContenu('Contact', 'operation@amanexus.com\n+228 91 97 80 80'),
-      SectionContenu('Photographies', 'Images générées pour ARZIKI, sans logo ni texte lisible.'),
+      SectionContenu('Hébergement',
+          'Application : Google Cloud (Firebase), centre de données de Johannesburg, Afrique du Sud.\n'
+              'Site internet : Vercel Inc., San Francisco, États-Unis.'),
+      SectionContenu('Propriété intellectuelle',
+          "La marque ARZIKI, son logo et l'ensemble des contenus sont la propriété de NEXUS International."),
+      SectionContenu('Photographies', 'Images réalisées pour ARZIKI, sans logo ni texte lisible.'),
     ],
   ),
 };

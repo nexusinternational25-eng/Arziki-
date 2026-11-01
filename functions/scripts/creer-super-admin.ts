@@ -22,7 +22,7 @@ async function principal(): Promise<void> {
   initializeApp();
   const auth = getAuth();
   const utilisateur = await auth.getUserByEmail(email).catch(() =>
-    auth.createUser({ email, displayName: "Oumara Moussa Saley Zouzou" }),
+    auth.createUser({ email, displayName: "CEO NEXUS International" }),
   );
   await auth.setCustomUserClaims(utilisateur.uid, { role: "super_admin" });
   const db = getFirestore();
@@ -32,8 +32,8 @@ async function principal(): Promise<void> {
       niveau: null,
       statut: "actif",
       kycStatut: "valide",
-      prenom: "Oumara",
-      nom: "Moussa Saley Zouzou",
+      prenom: "CEO",
+      nom: "NEXUS International",
       email,
       pays: "TG",
       creeLe: FieldValue.serverTimestamp(),

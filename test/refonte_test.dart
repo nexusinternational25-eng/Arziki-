@@ -1,10 +1,13 @@
 // Tests de la refonte : mode visiteur, opérations visibles par niveau,
 // services (commande complète), calculs, formats, contenus modifiables.
 
+import 'dart:io';
+
 import 'package:arziki/auth/session.dart';
 import 'package:arziki/config/app_config.dart';
 import 'package:arziki/contenu/contenus.dart';
 import 'package:arziki/core/roles.dart';
+import 'package:arziki/core/textes_legaux.dart';
 import 'package:arziki/models/utilisateur.dart';
 import 'package:arziki/operations/operations.dart';
 import 'package:arziki/router/garde_roles.dart';
@@ -144,12 +147,25 @@ void main() {
     });
     test('le fondateur et les mentions légales sont présents', () {
       final apropos = pagesParDefaut[PagesId.aPropos]!.sections.map((s) => s.texte).join();
-      expect(apropos, contains('MOUSSA SALEY ZOUZOU OUMARA'));
+      expect(apropos, contains('CEO de NEXUS International'));
       expect(apropos, contains('USAID'));
       final mentions = pagesParDefaut[PagesId.mentions]!.sections.map((s) => s.texte).join();
       expect(mentions, contains('TG-LFW-01-2025-A10-03200'));
       expect(mentions, contains('18 rue Léopold Sédar Senghor'));
       expect(const Contacts().whatsappChiffres, '22891978080');
+    });
+    test("le nom du propriétaire et la mention « provisoire » n'apparaissent nulle part", () {
+      final fichiers = [
+        ...Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart')),
+        File('livraison/index.html'),
+      ];
+      for (final f in fichiers) {
+        final texte = f.readAsStringSync().toLowerCase();
+        for (final interdit in ['moussa', 'zouzou', 'saley', 'version provisoire', 'en attente de validation par l']) {
+          expect(texte.contains(interdit), isFalse, reason: '${f.path} contient « $interdit »');
+        }
+      }
+      expect(TextesLegaux.versionConditions, '1.0');
     });
     test('formats des montants et des dates', () {
       expect(fcfa(6000000), '6 000 000 FCFA');

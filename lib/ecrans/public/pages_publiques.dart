@@ -62,12 +62,12 @@ class EcranDecouvrir extends StatelessWidget {
         CarteArziki(
           onTap: () => context.push(Chemins.info(PagesId.aPropos)),
           child: Row(children: [
-            const AvatarArziki(nom: 'Moussa Oumara', taille: 52),
+            const PastilleNexus(taille: 52),
             const SizedBox(width: ArzikiEspaces.m),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Une initiative de NEXUS International', style: t.titleSmall),
-                Text('Fondée par MOUSSA SALEY ZOUZOU OUMARA, conseiller en investissement certifié USAID.', style: t.bodySmall),
+                Text('Dirigée par le CEO de NEXUS International, conseiller en investissement certifié USAID.', style: t.bodySmall),
               ]),
             ),
             const Icon(Icons.chevron_right_rounded),
@@ -348,7 +348,26 @@ class TableauGaranties extends StatelessWidget {
   }
 }
 
-/// Présentation du fondateur.
+/// Pastille ronde avec le symbole ARZIKI (à la place d'une photo de personne).
+class PastilleNexus extends StatelessWidget {
+  const PastilleNexus({super.key, this.taille = 56});
+  final double taille;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: taille,
+        height: taille,
+        padding: EdgeInsets.all(taille * 0.16),
+        decoration: BoxDecoration(
+          color: ArzikiCouleurs.blanc,
+          shape: BoxShape.circle,
+          border: Border.all(color: ArzikiCouleurs.vert.withValues(alpha: 0.3), width: 2),
+        ),
+        child: const LogoArziki(symboleSeul: true),
+      );
+}
+
+/// Présentation de la direction.
 class CarteFondateur extends StatelessWidget {
   const CarteFondateur({super.key});
 
@@ -363,12 +382,12 @@ class CarteFondateur extends StatelessWidget {
     return CarteArziki(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const AvatarArziki(nom: 'Moussa Oumara', taille: 64),
+          const PastilleNexus(taille: 64),
           const SizedBox(width: ArzikiEspaces.m),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('MOUSSA SALEY ZOUZOU OUMARA', style: t.titleMedium),
-              Text('Fondateur de NEXUS International', style: t.bodySmall),
+              Text('CEO de NEXUS International', style: t.titleMedium),
+              Text("Fondateur d'ARZIKI", style: t.bodySmall),
               const SizedBox(height: 4),
               const BadgeStatut('Conseiller en investissement certifié USAID', ton: TonBadge.succes, icone: Icons.verified_rounded),
             ]),
