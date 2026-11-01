@@ -1,0 +1,30 @@
+# Contrôle du portail Desk Algérie-Niger : lint, types et build à chaque push.
+name: Desk Algérie-Niger
+
+on:
+  push:
+    paths:
+      - "desk-algerie-niger/**"
+      - ".github/workflows/desk-algerie-niger.yml"
+  pull_request:
+    paths:
+      - "desk-algerie-niger/**"
+
+defaults:
+  run:
+    working-directory: desk-algerie-niger
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desk-algerie-niger/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build

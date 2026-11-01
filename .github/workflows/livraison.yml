@@ -17,6 +17,10 @@ name: Livraison
 on:
   push:
     branches: [main, "claude/**"]
+    # Le portail Desk Algérie-Niger a sa propre action : il ne relance pas la livraison d'ARZIKI.
+    paths-ignore:
+      - "desk-algerie-niger/**"
+      - ".github/workflows/desk-algerie-niger.yml"
   workflow_dispatch:
     inputs:
       mode:

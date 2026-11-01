@@ -1,0 +1,330 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------------
+   Jetons de couleur (thème clair par défaut)
+   ------------------------------------------------------------------------ */
+:root {
+  --c-nuit: #1b2d52;        /* indigo profond : en-tête et pied de page */
+  --c-nuit-2: #243a66;
+  --c-sable: #f4efe6;       /* fond */
+  --c-surface: #fffdf8;     /* cartes */
+  --c-surface-2: #f9f5ec;
+  --c-ligne: #e3dacb;
+  --c-ocre: #b8691f;        /* accents décoratifs */
+  --c-ocre-fort: #985413;   /* liens et boutons : contraste AA sur sable et sur blanc */
+  --c-ocre-fort-survol: #7f450f;
+  --c-ocre-clair: #e8a861;  /* accent sur fond indigo */
+  --c-vert: #0f6b45;
+  --c-vert-pale: #e3f0e8;
+  --c-encre: #16233a;
+  --c-gris: #5d6573;
+  --c-sur-nuit: #f4efe6;
+  --c-sur-nuit-2: #c9cfdb;
+  --c-erreur: #b42318;
+  --c-erreur-pale: #fdecea;
+  --c-ombre: 22 35 58;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="clair"]) {
+    --c-nuit: #0c1530;
+    --c-nuit-2: #16234a;
+    --c-sable: #0f1729;
+    --c-surface: #172238;
+    --c-surface-2: #1c2942;
+    --c-ligne: #2b3a57;
+    --c-ocre: #d88a3f;
+    --c-ocre-fort: #e8a25c;
+    --c-ocre-fort-survol: #f1b878;
+    --c-ocre-clair: #efb06c;
+    --c-vert: #4cbb87;
+    --c-vert-pale: #16352a;
+    --c-encre: #ece6da;
+    --c-gris: #a9b0bd;
+    --c-sur-nuit: #ece6da;
+    --c-sur-nuit-2: #a9b0bd;
+    --c-erreur: #f39b8f;
+    --c-erreur-pale: #3a1a19;
+    --c-ombre: 0 0 0;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="sombre"] {
+  --c-nuit: #0c1530;
+  --c-nuit-2: #16234a;
+  --c-sable: #0f1729;
+  --c-surface: #172238;
+  --c-surface-2: #1c2942;
+  --c-ligne: #2b3a57;
+  --c-ocre: #d88a3f;
+  --c-ocre-fort: #e8a25c;
+  --c-ocre-fort-survol: #f1b878;
+  --c-ocre-clair: #efb06c;
+  --c-vert: #4cbb87;
+  --c-vert-pale: #16352a;
+  --c-encre: #ece6da;
+  --c-gris: #a9b0bd;
+  --c-sur-nuit: #ece6da;
+  --c-sur-nuit-2: #a9b0bd;
+  --c-erreur: #f39b8f;
+  --c-erreur-pale: #3a1a19;
+  --c-ombre: 0 0 0;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-nuit: var(--c-nuit);
+  --color-nuit-2: var(--c-nuit-2);
+  --color-sable: var(--c-sable);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-ligne: var(--c-ligne);
+  --color-ocre: var(--c-ocre);
+  --color-ocre-fort: var(--c-ocre-fort);
+  --color-ocre-survol: var(--c-ocre-fort-survol);
+  --color-ocre-clair: var(--c-ocre-clair);
+  --color-vert: var(--c-vert);
+  --color-vert-pale: var(--c-vert-pale);
+  --color-encre: var(--c-encre);
+  --color-gris: var(--c-gris);
+  --color-sur-nuit: var(--c-sur-nuit);
+  --color-sur-nuit-2: var(--c-sur-nuit-2);
+  --color-erreur: var(--c-erreur);
+  --color-erreur-pale: var(--c-erreur-pale);
+  --font-titre: var(--font-reem-kufi), var(--font-plex-arabic), system-ui, sans-serif;
+  --font-sans: var(--font-plex-arabic), system-ui, sans-serif;
+}
+
+/* ------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------ */
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--c-sable);
+  color: var(--c-encre);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.65;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-titre);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--c-ocre);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--c-ocre);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Composants réutilisables
+   ------------------------------------------------------------------------ */
+@layer components {
+  .conteneur {
+    width: 100%;
+    max-width: 76rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .conteneur {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  .bouton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+  }
+  .bouton-principal {
+    background: var(--c-ocre-fort);
+    color: #fff;
+  }
+  .bouton-principal:hover {
+    background: var(--c-ocre-fort-survol);
+  }
+  :root[data-theme="sombre"] .bouton-principal {
+    color: #1a1006;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="clair"]) .bouton-principal {
+      color: #1a1006;
+    }
+  }
+  .bouton-secondaire {
+    background: transparent;
+    color: var(--c-encre);
+    border: 1.5px solid var(--c-ligne);
+  }
+  .bouton-secondaire:hover {
+    border-color: var(--c-ocre);
+  }
+  .bouton-clair {
+    background: transparent;
+    color: var(--c-sur-nuit);
+    border: 1.5px solid rgb(255 255 255 / 0.35);
+  }
+  .bouton-clair:hover {
+    border-color: var(--c-ocre-clair);
+  }
+
+  .carte {
+    background: var(--c-surface);
+    border: 1px solid var(--c-ligne);
+    border-radius: 0.75rem;
+  }
+
+  .surtitre {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--c-ocre-fort);
+  }
+  .surtitre::before {
+    content: "";
+    width: 1.5rem;
+    height: 2px;
+    background: currentColor;
+  }
+
+  .lien {
+    color: var(--c-ocre-fort);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+  .lien:hover {
+    color: var(--c-ocre-fort-survol);
+  }
+
+  .champ {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.625rem 0.875rem;
+    background: var(--c-surface);
+    color: var(--c-encre);
+    border: 1.5px solid var(--c-ligne);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+  }
+  .champ:focus {
+    outline: none;
+    border-color: var(--c-ocre);
+    box-shadow: 0 0 0 3px rgb(184 105 31 / 0.25);
+  }
+  .champ[aria-invalid="true"] {
+    border-color: var(--c-erreur);
+  }
+
+  /* Texte long des articles et des pages légales */
+  .prose-desk h2 {
+    font-size: 1.375rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+  .prose-desk h3 {
+    font-size: 1.125rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose-desk p,
+  .prose-desk ul,
+  .prose-desk ol {
+    margin-bottom: 1rem;
+  }
+  .prose-desk ul {
+    list-style: disc;
+    padding-inline-start: 1.25rem;
+  }
+  .prose-desk ol {
+    list-style: decimal;
+    padding-inline-start: 1.25rem;
+  }
+  .prose-desk li {
+    margin-bottom: 0.375rem;
+  }
+  .prose-desk a {
+    color: var(--c-ocre-fort);
+    text-decoration: underline;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Animation du tracé de la route (carte de l'accueil)
+   ------------------------------------------------------------------------ */
+.trace-route {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: tracer 3.2s ease-out 0.3s forwards;
+}
+.etape-carte {
+  opacity: 0;
+  animation: apparaitre 0.5s ease-out forwards;
+}
+@keyframes tracer {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes apparaitre {
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trace-route {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .etape-carte {
+    animation: none;
+    opacity: 1;
+  }
+}
