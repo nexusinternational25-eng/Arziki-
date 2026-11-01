@@ -1,5 +1,5 @@
 // Console d'administration : tableau de bord, comptes, investisseurs privés
-// (invitations), candidatures au Cercle, équipe, journal d'audit.
+// (invitations), candidatures au Cercle, services, contenus, équipe, journal d'audit.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +12,8 @@ import '../../core/roles.dart';
 import '../../demo/depot_comptes_demo.dart';
 import '../../models/acces.dart';
 import '../../models/utilisateur.dart';
+import '../../operations/operations.dart';
+import '../../services_nexus/services.dart';
 import '../../router/garde_roles.dart';
 import '../../theme/arziki_theme.dart';
 import '../../ui/composants.dart';
@@ -37,23 +39,37 @@ class CadreConsole extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final u = ref.watch(sessionProvider).utilisateur!;
     final entrees = [
-      const _Entree(Chemins.admin, Icons.dashboard_outlined, 'Tableau de bord'),
-      const _Entree(Chemins.adminComptes, Icons.people_outline, 'Comptes'),
-      const _Entree(Chemins.adminInvitations, Icons.vpn_key_outlined, 'Investisseurs privés'),
-      const _Entree(Chemins.adminCandidatures, Icons.how_to_reg_outlined, 'Candidatures au Cercle'),
-      const _Entree(Chemins.adminEquipe, Icons.admin_panel_settings_outlined, 'Équipe'),
-      const _Entree(Chemins.adminJournal, Icons.history, "Journal d'audit"),
+      const _Entree(Chemins.admin, Icons.dashboard_rounded, 'Tableau de bord'),
+      const _Entree(Chemins.adminComptes, Icons.people_alt_rounded, 'Comptes'),
+      const _Entree(Chemins.adminInvitations, Icons.vpn_key_rounded, 'Investisseurs privés'),
+      const _Entree(Chemins.adminCandidatures, Icons.how_to_reg_rounded, 'Candidatures au Cercle'),
+      const _Entree(Chemins.adminServices, Icons.work_rounded, 'Services'),
+      const _Entree(Chemins.adminContenus, Icons.edit_note_rounded, 'Contenus'),
+      const _Entree(Chemins.adminEquipe, Icons.admin_panel_settings_rounded, 'Équipe'),
+      const _Entree(Chemins.adminJournal, Icons.history_rounded, "Journal d'audit"),
     ].where((e) => roleAutorise(u.role, e.chemin)).toList();
     final index = entrees.indexWhere((e) => e.chemin == chemin).clamp(0, entrees.length - 1);
     final large = MediaQuery.sizeOf(context).width >= 900;
 
     final menu = NavigationRail(
       extended: true,
+      minExtendedWidth: 248,
       selectedIndex: index,
+      indicatorColor: ArzikiCouleurs.vert.withValues(alpha: 0.14),
+      selectedIconTheme: const IconThemeData(color: ArzikiCouleurs.vert),
       onDestinationSelected: (i) => context.go(entrees[i].chemin),
       leading: const Padding(
-        padding: EdgeInsets.symmetric(vertical: ArzikiEspaces.m),
-        child: LogoArziki(hauteur: 48),
+        padding: EdgeInsets.symmetric(vertical: ArzikiEspaces.l),
+        child: LogoArziki(hauteur: 44),
+      ),
+      trailing: Expanded(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.all(ArzikiEspaces.m),
+            child: Text('Une offre de NEXUS International', style: Theme.of(context).textTheme.labelSmall),
+          ),
+        ),
       ),
       destinations: [
         for (final e in entrees) NavigationRailDestination(icon: Icon(e.icone), label: Text(e.libelle)),
@@ -65,7 +81,11 @@ class CadreConsole extends ConsumerWidget {
         title: Text(titre),
         actions: [
           ?action,
-          Center(child: Text(u.nomComplet, style: const TextStyle(color: ArzikiCouleurs.blanc))),
+          if (MediaQuery.sizeOf(context).width >= 600) ...[
+            AvatarArziki(nom: u.nomComplet, taille: 32),
+            const SizedBox(width: ArzikiEspaces.s),
+            Center(child: Text(u.nomComplet, style: Theme.of(context).textTheme.titleSmall)),
+          ],
           const SizedBox(width: ArzikiEspaces.s),
           const BoutonDeconnexion(),
         ],
@@ -74,7 +94,7 @@ class CadreConsole extends ConsumerWidget {
           ? null
           : Drawer(
               child: ListView(children: [
-                const DrawerHeader(child: LogoArziki(hauteur: 56)),
+                const DrawerHeader(child: Center(child: LogoArziki(hauteur: 52))),
                 for (final e in entrees)
                   ListTile(
                     leading: Icon(e.icone),
@@ -106,8 +126,12 @@ mixin _Rechargeable<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 }
 
 Widget _chargement<T>(AsyncSnapshot<T> snap, Widget Function(T data) construire) {
-  if (snap.hasError) return Center(child: Text('Erreur : ${snap.error}'));
-  if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+  if (snap.hasError) {
+    return Colonne(children: [
+      EcranVide(icone: Icons.error_outline_rounded, titre: 'Impossible de charger les données', texte: '${snap.error}'),
+    ]);
+  }
+  if (!snap.hasData) return const Padding(padding: EdgeInsets.all(ArzikiEspaces.l), child: ListeSquelettes(nombre: 4));
   return construire(snap.data as T);
 }
 
@@ -143,29 +167,27 @@ class TableauDeBordAdmin extends ConsumerWidget {
           final candEnAttente = candidatures.where((c) => c.statut == StatutCandidature.soumise).length;
           final invActives = invitations.where((i) => i.statut(DateTime.now()) == 'En attente').length;
 
-          Widget tuile(String titre, String valeur, IconData icone, String? chemin) => SizedBox(
-                width: 260,
-                child: Card(
-                  child: InkWell(
-                    onTap: chemin == null || !roleAutorise(role, chemin) ? null : () => context.go(chemin),
-                    child: Padding(
-                      padding: const EdgeInsets.all(ArzikiEspaces.m),
-                      child: Row(children: [
-                        Icon(icone, color: ArzikiCouleurs.vert, size: 36),
-                        const SizedBox(width: ArzikiEspaces.m),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(valeur, style: Theme.of(context).textTheme.headlineMedium),
-                            Text(titre),
-                          ]),
-                        ),
-                      ]),
-                    ),
-                  ),
+          final ops = ref.read(operationsProvider).operations;
+          final services = ref.read(servicesProvider);
+          final enCours = ops.where((o) => o.statut != StatutOperation.cloturee).toList();
+          final volume = ops.fold<int>(0, (s, o) => s + o.montantReuni);
+          final retards = ops.where((o) => o.statut == StatutOperation.enRetard).length;
+          final margeMoy = ops.isEmpty ? 0.0 : ops.fold<double>(0, (s, o) => s + o.margeViseePct) / ops.length;
+          final commandesAttente = services.commandes.where((c) => c.etape == EtapeCommande.besoinEnvoye).length;
+
+          Widget tuile(String titre, String valeur, IconData icone, String? chemin, {Color couleur = ArzikiCouleurs.vert}) => SizedBox(
+                width: 230,
+                child: CarteChiffre(
+                  icone: icone,
+                  valeur: valeur,
+                  libelle: titre,
+                  couleur: couleur,
+                  onTap: chemin == null || !roleAutorise(role, chemin) ? null : () => context.go(chemin),
                 ),
               );
 
           return ListView(padding: const EdgeInsets.all(ArzikiEspaces.l), children: [
+            const EnTetePage('Tableau de bord', "Ce qui demande votre attention aujourd'hui, et les indicateurs clés d'ARZIKI."),
             if (taille >= seuilAlerteTailleCercle)
               Padding(
                 padding: const EdgeInsets.only(bottom: ArzikiEspaces.m),
@@ -176,17 +198,27 @@ class TableauDeBordAdmin extends ConsumerWidget {
                   type: TypeEncadre.erreur,
                 ),
               ),
-            Wrap(spacing: ArzikiEspaces.m, runSpacing: ArzikiEspaces.m, children: [
-              tuile('Comptes à valider', '$aValider', Icons.pending_actions, Chemins.adminComptes),
-              tuile('Candidatures au Cercle', '$candEnAttente', Icons.how_to_reg, Chemins.adminCandidatures),
-              tuile('Invitations en attente', '$invActives', Icons.vpn_key, Chemins.adminInvitations),
-              tuile('Personnes dans le Cercle', '$taille / $limiteTailleCercle', Icons.groups, null),
-              tuile('Comptes au total', '${comptes.length}', Icons.people, Chemins.adminComptes),
+            Text('À traiter', style: Theme.of(context).textTheme.titleLarge),
+            Wrap(spacing: ArzikiEspaces.m, children: [
+              tuile('Comptes à valider', '$aValider', Icons.pending_actions_rounded, Chemins.adminComptes, couleur: ArzikiCouleurs.orange),
+              tuile('Candidatures au Cercle', '$candEnAttente', Icons.how_to_reg_rounded, Chemins.adminCandidatures, couleur: ArzikiCouleurs.orange),
+              tuile('Invitations en attente', '$invActives', Icons.vpn_key_rounded, Chemins.adminInvitations),
+              tuile('Demandes de service à chiffrer', '$commandesAttente', Icons.request_quote_rounded, Chemins.adminServices, couleur: ArzikiCouleurs.orange),
             ]),
-            const SizedBox(height: ArzikiEspaces.l),
+            const SizedBox(height: ArzikiEspaces.m),
+            Text('Indicateurs', style: Theme.of(context).textTheme.titleLarge),
+            Wrap(spacing: ArzikiEspaces.m, children: [
+              tuile('Opérations en cours', '${enCours.length}', Icons.timeline_rounded, null),
+              tuile('Volume financé', fcfa(volume), Icons.payments_rounded, null),
+              tuile('Opérations en retard', '$retards', Icons.warning_amber_rounded, null, couleur: retards > 0 ? ArzikiCouleurs.erreur : ArzikiCouleurs.vert),
+              tuile('Marge visée moyenne', '${margeMoy.toStringAsFixed(1).replaceAll('.', ',')} %', Icons.trending_up_rounded, null),
+              tuile('Personnes dans le Cercle', '$taille / $limiteTailleCercle', Icons.groups_rounded, null),
+              tuile('Services : encaissé ce mois', fcfa(services.chiffreAffairesDuMois(DateTime.now())), Icons.account_balance_wallet_rounded, Chemins.adminServices, couleur: ArzikiCouleurs.info),
+              tuile('Comptes au total', '${comptes.length}', Icons.people_alt_rounded, Chemins.adminComptes),
+            ]),
+            const SizedBox(height: ArzikiEspaces.m),
             const Encadre(
-              'Les indicateurs des opérations (volume financé, retards, marges, frais de dossier) '
-              'arrivent avec les jalons 3 à 9.',
+              'Les décisions sur les demandes, la publication des opérations et la clôture arrivent avec les jalons 3 à 6.',
             ),
           ]);
         }),

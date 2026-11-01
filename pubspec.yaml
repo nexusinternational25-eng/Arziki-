@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.13.7
@@ -43,6 +43,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   crypto: ^3.0.8
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +66,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logo/arziki_logo.png
+    - assets/logo/arziki_logo_blanc.png
     - assets/logo/arziki_symbole.png
     - assets/images/
   # Polices sous licence SIL Open Font License (voir assets/fonts/LICENCE-*).
@@ -100,7 +102,7 @@ flutter_launcher_icons:
 # Écran de démarrage natif (dart run flutter_native_splash:create)
 flutter_native_splash:
   color: "#FFFFFF"
-  image: assets/logo/arziki_symbole.png
+  image: assets/logo/arziki_icone_premier_plan.png
   android_12:
     color: "#FFFFFF"
     image: assets/logo/arziki_icone_premier_plan.png

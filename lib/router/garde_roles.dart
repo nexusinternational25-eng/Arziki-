@@ -12,36 +12,62 @@ import '../auth/session.dart';
 class Chemins {
   Chemins._();
 
+  // Entrée
   static const demarrage = '/';
   static const presentation = '/presentation';
   static const choix = '/choix';
+  static const decouvrir = '/decouvrir';
   static const invitation = '/invitation';
   static const inscription = '/inscription';
   static const connexion = '/connexion';
   static const connexionAdmin = '/connexion-admin';
   static const doubleFacteur = '/connexion-admin/code';
 
+  // Compte
   static const enAttente = '/en-attente';
   static const identite = '/verification-identite';
   static const candidature = '/candidature';
   static const suspendu = '/compte-suspendu';
   static const accesRefuse = '/acces-refuse';
+  static const notifications = '/notifications';
+  static const profil = '/profil';
+  static const parametres = '/profil/parametres';
+  static const documents = '/profil/documents';
 
+  // Pages d'information (publiques)
+  static const infos = '/infos';
+  static String info(String id) => '/infos/$id';
+  static const faq = '/infos/faq';
+
+  // Services (catalogue public, commande avec compte)
+  static const services = '/services';
+  static const formations = '/services/formations';
+  static String offre(String id) => '/services/offre/$id';
+  static String commanderOffre(String id) => '/services/offre/$id/commander';
+  static String commandeService(String id) => '/services/commande/$id';
+
+  // Espaces
   static const entreprise = '/entreprise';
+  static const nouvelleDemande = '/entreprise/demande';
+  static String operationEntreprise(String id) => '/entreprise/operation/$id';
   static const cercle = '/cercle';
+  static String operationCercle(String id) => '/cercle/operation/$id';
   static const fournisseur = '/fournisseur';
   static const notaire = '/notaire';
 
+  // Console
   static const admin = '/admin';
   static const adminComptes = '/admin/comptes';
   static const adminInvitations = '/admin/invitations';
   static const adminCandidatures = '/admin/candidatures';
+  static const adminServices = '/admin/services';
+  static const adminContenus = '/admin/contenus';
   static const adminEquipe = '/admin/equipe';
   static const adminJournal = '/admin/journal';
 
-  /// Écrans accessibles sans être connecté (application mobile).
-  static const publicsMobile = {
-    demarrage, presentation, choix, invitation, inscription, connexion,
+  /// Écrans d'entrée (sans compte). Une personne connectée qui les ouvre retourne à son accueil.
+  static const entreeMobile = {
+    demarrage, presentation, choix, decouvrir, invitation, inscription, connexion,
     connexionAdmin, doubleFacteur,
   };
 
@@ -49,7 +75,16 @@ class Chemins {
   static const publicsConsole = {demarrage, connexionAdmin, doubleFacteur};
 
   /// Écrans autorisés à un compte en attente de validation.
-  static const autorisesEnAttente = {enAttente, identite, candidature};
+  static const autorisesEnAttente = {enAttente, identite, candidature, notifications, profil, parametres, documents};
+}
+
+bool _commencePar(String chemin, String prefixe) => chemin == prefixe || chemin.startsWith('$prefixe/');
+
+/// Contenu public : pages d'information et catalogue des Services (sans commande).
+bool estContenuPublic(String chemin) {
+  if (_commencePar(chemin, Chemins.infos)) return true;
+  if (chemin == Chemins.services || chemin == Chemins.formations) return true;
+  return chemin.startsWith('/services/offre/') && !chemin.endsWith('/commander');
 }
 
 /// Écran d'accueil de chaque rôle.
@@ -62,9 +97,6 @@ String accueilDe(Role role) => switch (role) {
       Role.candidatCercle => Chemins.enAttente,
     };
 
-bool _commencePar(String chemin, String prefixe) =>
-    chemin == prefixe || chemin.startsWith('$prefixe/');
-
 /// Le rôle a-t-il le droit d'ouvrir cet écran (compte actif) ?
 bool roleAutorise(Role role, String chemin) {
   if (_commencePar(chemin, Chemins.admin)) {
@@ -72,7 +104,9 @@ bool roleAutorise(Role role, String chemin) {
     if (_commencePar(chemin, Chemins.adminEquipe)) return role.peutGererAdmins;
     if (_commencePar(chemin, Chemins.adminInvitations) ||
         _commencePar(chemin, Chemins.adminCandidatures) ||
-        _commencePar(chemin, Chemins.adminJournal)) {
+        _commencePar(chemin, Chemins.adminJournal) ||
+        _commencePar(chemin, Chemins.adminServices) ||
+        _commencePar(chemin, Chemins.adminContenus)) {
       return role.peutValiderComptes;
     }
     return true; // tableau de bord et liste des comptes (lecture pour l'analyste)
@@ -91,13 +125,14 @@ String? redirection(EtatSession etat, String chemin, CibleApp cible) {
   final console = cible == CibleApp.console;
   final u = etat.utilisateur;
 
-  // --- Personne connectée ---
+  // --- Personne non connectée (ou visiteur) ---
   if (u == null) {
     if (console) {
       return Chemins.publicsConsole.contains(chemin) ? null : Chemins.connexionAdmin;
     }
     if (chemin == Chemins.presentation && etat.presentationVue) return Chemins.choix;
-    return Chemins.publicsMobile.contains(chemin) ? null : Chemins.presentation;
+    if (Chemins.entreeMobile.contains(chemin) || estContenuPublic(chemin)) return null;
+    return etat.presentationVue ? Chemins.choix : Chemins.presentation;
   }
 
   // --- Console web réservée à l'administration ---
@@ -105,23 +140,22 @@ String? redirection(EtatSession etat, String chemin, CibleApp cible) {
 
   // --- Compte suspendu ---
   if (u.statut == StatutCompte.suspendu) {
-    return chemin == Chemins.suspendu ? null : Chemins.suspendu;
+    if (chemin == Chemins.suspendu || _commencePar(chemin, Chemins.infos)) return null;
+    return Chemins.suspendu;
   }
 
   // --- Compte en attente de validation ---
   if (u.statut == StatutCompte.enAttente) {
     if (Chemins.autorisesEnAttente.contains(chemin) && roleAutorise(u.role, chemin)) return null;
+    if (estContenuPublic(chemin)) return null;
     return Chemins.enAttente;
   }
 
   // --- Compte actif ---
   final accueil = accueilDe(u.role);
-  final ecransDEntree = {
-    ...Chemins.publicsMobile,
-    Chemins.enAttente,
-    Chemins.suspendu,
-  };
-  if (ecransDEntree.contains(chemin)) return accueil;
+  if (Chemins.entreeMobile.contains(chemin) || chemin == Chemins.enAttente || chemin == Chemins.suspendu) {
+    return accueil;
+  }
   if (!roleAutorise(u.role, chemin)) return accueil;
   return null;
 }

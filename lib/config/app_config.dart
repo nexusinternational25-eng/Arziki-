@@ -46,6 +46,9 @@ class AppConfig {
   static const String hoteEmulateurs =
       String.fromEnvironment('EMULATOR_HOST', defaultValue: 'localhost');
 
+  /// Version affichée dans le menu et les paramètres (identique à pubspec.yaml).
+  static const String version = '1.1.0';
+
   /// Code SMS simulé en mode démonstration (CLAUDE.md, section 17).
   static const String codeSmsDemo = '123456';
 
