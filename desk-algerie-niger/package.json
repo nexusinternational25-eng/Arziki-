@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verifier-textes": "node scripts/verifier-textes.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.1",

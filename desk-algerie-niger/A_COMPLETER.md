@@ -20,7 +20,6 @@ Tant que ni Resend ni Supabase ne sont branchés, le formulaire l'indique honnê
 
 ## 3. Textes à confirmer
 
-- [ ] Transcription arabe du nom du fondateur : « موسى صالي زوزو عمارة » (page À propos).
 - [ ] Nom arabe du site de forage : « كفرا » pour Kafra.
 - [ ] Durée de conservation des demandes sans suite : **3 ans** (valeur provisoire, page Confidentialité).
 - [ ] Directeur de la publication : « le directeur de NEXUS International » (mentions légales). Préciser si un nom doit apparaître.

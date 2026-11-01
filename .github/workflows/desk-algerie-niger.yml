@@ -25,6 +25,7 @@ jobs:
           cache: npm
           cache-dependency-path: desk-algerie-niger/package-lock.json
       - run: npm ci
+      - run: npm run verifier-textes
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build

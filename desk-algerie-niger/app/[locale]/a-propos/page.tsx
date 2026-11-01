@@ -44,7 +44,6 @@ export default async function PageAPropos({ params }: PageProps<"/[locale]/a-pro
           <div className="p-6 sm:p-8">
             <p className="surtitre">{t("fondateurTitre")}</p>
             <h2 className="mt-2 text-2xl font-semibold">{t("fondateurNom")}</h2>
-            <p className="font-semibold text-gris">{t("fondateurRole")}</p>
             <p className="mt-4">{t("fondateurTexte1")}</p>
             <p className="mt-3">{t("fondateurTexte2")}</p>
           </div>
