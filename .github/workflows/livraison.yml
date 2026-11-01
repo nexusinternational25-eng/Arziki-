@@ -149,9 +149,12 @@ jobs:
           sed -i 's#<base href="/app/">#<base href="./">#' site/app/index.html
           sed -i 's#<base href="/console/">#<base href="./">#' site/console/index.html
           touch site/.nojekyll
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d+ -f1)
           TAILLE="$(( $(stat -c%s site/ARZIKI.apk) / 1048576 )) Mo"
-          DATE=$(TZ=Africa/Lome date +'%d/%m/%Y à %Hh%M')
+          # Date en toutes lettres : 1er novembre 2026
+          MOIS=(janvier février mars avril mai juin juillet août septembre octobre novembre décembre)
+          JOUR=$(TZ=Africa/Lome date +%-d); [ "$JOUR" = "1" ] && JOUR="1er"
+          DATE="$JOUR ${MOIS[$(( $(TZ=Africa/Lome date +%-m) - 1 ))]} $(TZ=Africa/Lome date +%Y)"
           sed -i "s#__VERSION__#$VERSION#; s#__TAILLE__#$TAILLE#; s#__DATE__#$DATE#" site/index.html
           echo "commit=${GITHUB_SHA}" > site/version-livraison.txt
           ls -la site

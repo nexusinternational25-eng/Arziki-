@@ -461,6 +461,7 @@ Le propriétaire n'est pas développeur. Claude Code travaille comme un chef de 
 
 - GitHub Actions (`.github/workflows/livraison.yml`) teste, construit l'APK et les versions web, puis publie la branche `livraison`.
 - Vercel (projet `arziki`, équipe `nexusinternational25-engs-projects`) affiche la branche `livraison` : https://arziki-rosy.vercel.app (page d'accueil, `ARZIKI.apk`, `/app/`, `/console/`).
+- Publication en production : le projet Vercel ignore tout ce qui ne vient pas de la branche `livraison`. Après chaque livraison réussie, publier la branche `livraison` en production (outil Vercel « create_deployment », `gitSource` sur `livraison`, `target: production`), puis vérifier https://arziki-rosy.vercel.app.
 - Lien direct et permanent de l'APK : https://github.com/nexusinternational25-eng/Arziki-/releases/latest/download/ARZIKI.apk
 - Banque d'images : `assets/images` (27 photos, liste dans `lib/core/images.dart`). La photo n° 13 du document fourni est écartée (drapeau), la n° 16 est recadrée.
 - Logo principal : le « A » au chariot (`assets/logo/arziki_logo.png`, version blanche pour les fonds verts et le mode sombre, symbole seul pour l'icône).
