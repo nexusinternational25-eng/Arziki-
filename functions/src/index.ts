@@ -6,7 +6,8 @@ import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
 import { setGlobalOptions } from "firebase-functions/v2";
-import { CallableRequest, HttpsError, onCall } from "firebase-functions/v2/https";
+import { defineSecret, defineString } from "firebase-functions/params";
+import { CallableRequest, HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 
 import {
   Acteur,
@@ -27,6 +28,22 @@ import {
   verifierInvitation,
 } from "./acces";
 import { ecrireAudit } from "./audit";
+import {
+  DUREE_VALIDITE_MS,
+  ErreurVerification,
+  VerificationDoc,
+  corpsModeleCode,
+  demandesRecentes,
+  extraireMessages,
+  finaliser,
+  genererCode,
+  genererSel,
+  hacherCode,
+  lienWhatsapp,
+  messageAEnvoyer,
+  messageConfirme,
+  signatureValide,
+} from "./whatsapp";
 import { REGION } from "./region";
 
 initializeApp();
@@ -105,7 +122,8 @@ export const inscrire = onCall(
   options,
   proteger(async (req) => {
     const acteur = acteurDe(req);
-    const telephone = req.auth?.token.phone_number as string | undefined;
+    // Numéro vérifié par SMS (Firebase) ou par WhatsApp (jeton créé par finaliserVerification).
+    const telephone = (req.auth?.token.phone_number ?? req.auth?.token.telephone_verifie) as string | undefined;
     if (!telephone) throw new HttpsError("failed-precondition", "Numéro de téléphone non vérifié.");
     const { parcours, codeInvitation, cgVersion } = req.data ?? {};
     texte(cgVersion, "version des conditions", 1, 40);
@@ -503,4 +521,176 @@ export const signalerAccesRefuse = onCall(
     });
     return { ok: true };
   }),
+);
+
+// ---------------------------------------------------------------------------
+// Vérification du numéro par WhatsApp (CLAUDE.md, section 22.3)
+// WhatsApp d'abord, SMS en secours (le SMS reste géré par Firebase Authentication).
+// ---------------------------------------------------------------------------
+
+// Réglages WhatsApp Business (Meta). Les clés sont des secrets Firebase, jamais dans Git.
+const WHATSAPP_JETON = defineSecret("WHATSAPP_JETON"); // jeton d'accès permanent de l'API
+const WHATSAPP_SECRET_APP = defineSecret("WHATSAPP_SECRET_APP"); // secret de l'application Meta
+const WHATSAPP_JETON_WEBHOOK = defineSecret("WHATSAPP_JETON_WEBHOOK"); // mot de passe choisi pour le webhook
+const WHATSAPP_ID_NUMERO = defineString("WHATSAPP_ID_NUMERO", { default: "" }); // identifiant du numéro chez Meta
+const WHATSAPP_NUMERO_ARZIKI = defineString("WHATSAPP_NUMERO_ARZIKI", { default: "" }); // ex. +22890000000
+const VERSION_API_META = "v21.0";
+
+/** Envoie un message par l'API WhatsApp Cloud. */
+async function envoyerWhatsapp(corps: object): Promise<void> {
+  const reponse = await fetch(`https://graph.facebook.com/${VERSION_API_META}/${WHATSAPP_ID_NUMERO.value()}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${WHATSAPP_JETON.value()}`, "Content-Type": "application/json" },
+    body: JSON.stringify(corps),
+  });
+  if (!reponse.ok) {
+    // Pas de numéro de téléphone dans les journaux (CLAUDE.md, section 14).
+    console.error("Envoi WhatsApp refusé", reponse.status);
+    throw new HttpsError("unavailable", "WhatsApp est indisponible. Essayez de recevoir le code par SMS.");
+  }
+}
+
+function protegerVerification<T>(gestionnaire: (req: CallableRequest) => Promise<T>) {
+  return async (req: CallableRequest): Promise<T> => {
+    try {
+      return await gestionnaire(req);
+    } catch (e) {
+      if (e instanceof ErreurVerification) throw new HttpsError(e.code, e.message);
+      throw e;
+    }
+  };
+}
+
+/**
+ * Démarre une vérification. Appelée avant toute connexion (pas besoin d'être connecté,
+ * mais App Check obligatoire). Canal « message » : renvoie le lien WhatsApp à ouvrir.
+ * Canal « code » : envoie le code par WhatsApp.
+ */
+export const demarrerVerification = onCall(
+  { ...options, secrets: [WHATSAPP_JETON] },
+  protegerVerification(async (req) => {
+    const telephone = normaliserTelephone(texte(req.data?.telephone, "telephone", 8, 20));
+    const canal = req.data?.canal === "code" ? "code" : "message";
+    if (!/^\+\d{8,15}$/.test(telephone)) throw new HttpsError("invalid-argument", "Numéro de téléphone invalide.");
+    if (!WHATSAPP_NUMERO_ARZIKI.value() || !WHATSAPP_ID_NUMERO.value()) {
+      throw new HttpsError("unavailable", "La vérification par WhatsApp n'est pas encore active. Utilisez le SMS.");
+    }
+
+    const maintenant = Date.now();
+    const code = genererCode();
+    const sel = genererSel();
+    const ref = db.collection("verifications").doc();
+    // Limite de 5 demandes par heure et par numéro.
+    await db.runTransaction(async (tx) => {
+      const refLimite = db.doc(`limites_verification/${telephone}`);
+      const limite = await tx.get(refLimite);
+      const demandes = demandesRecentes((limite.get("demandes") as number[] | undefined) ?? [], maintenant);
+      tx.set(refLimite, { demandes });
+      const doc: VerificationDoc = {
+        telephone,
+        canal,
+        codeHache: hacherCode(code, sel),
+        sel,
+        creeLeMs: maintenant,
+        expireLeMs: maintenant + DUREE_VALIDITE_MS,
+        essais: 0,
+        statut: "en_attente",
+      };
+      tx.create(ref, doc);
+    });
+
+    if (canal === "code") {
+      await envoyerWhatsapp(corpsModeleCode(telephone, code));
+      return { id: ref.id };
+    }
+    const message = messageAEnvoyer(code);
+    return { id: ref.id, message, lien: lienWhatsapp(WHATSAPP_NUMERO_ARZIKI.value(), message) };
+  }),
+);
+
+/**
+ * Termine une vérification et renvoie un jeton de connexion Firebase.
+ * Canal « message » : renvoie { etat: "en_attente" } tant que le message n'est pas arrivé
+ * (l'application redemande toutes les 3 secondes).
+ */
+export const finaliserVerification = onCall(
+  options,
+  protegerVerification(async (req) => {
+    const id = texte(req.data?.id, "id", 10, 40);
+    const code = typeof req.data?.code === "string" ? req.data.code : undefined;
+    const ref = db.doc(`verifications/${id}`);
+
+    const resultat = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new ErreurVerification("Vérification introuvable. Recommencez.", "not-found");
+      const r = finaliser(snap.data() as VerificationDoc, Date.now(), code);
+      if (r.etat !== "en_attente" && Object.keys(r.maj).length) tx.update(ref, r.maj);
+      return r;
+    });
+    if (resultat.etat === "en_attente") return { etat: "en_attente" };
+    if (resultat.etat === "refuse") throw new HttpsError("failed-precondition", resultat.message);
+
+    // Compte Firebase lié à ce numéro (créé s'il n'existe pas encore).
+    const auth = getAuth();
+    let uid: string;
+    try {
+      const existant = await auth.getUserByPhoneNumber(resultat.telephone);
+      if (estRole(existant.customClaims?.role) && ["super_admin", "admin", "analyste"].includes(existant.customClaims!.role)) {
+        throw new HttpsError("permission-denied", "Les administrateurs se connectent avec leur adresse e-mail.");
+      }
+      uid = existant.uid;
+    } catch (e) {
+      if ((e as { code?: string }).code !== "auth/user-not-found") throw e;
+      uid = (await auth.createUser({ phoneNumber: resultat.telephone })).uid;
+    }
+    const jeton = await auth.createCustomToken(uid, { telephone_verifie: resultat.telephone });
+    return { etat: "valide", jeton };
+  }),
+);
+
+/**
+ * Point d'arrivée des messages WhatsApp (webhook Meta).
+ * GET : vérification de l'adresse par Meta. POST : messages reçus.
+ * Chaque requête est authentifiée par la signature de Meta.
+ */
+export const webhookWhatsapp = onRequest(
+  { secrets: [WHATSAPP_JETON, WHATSAPP_SECRET_APP, WHATSAPP_JETON_WEBHOOK] },
+  async (req, res) => {
+    if (req.method === "GET") {
+      const ok = req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === WHATSAPP_JETON_WEBHOOK.value();
+      if (ok) res.status(200).send(String(req.query["hub.challenge"] ?? ""));
+      else res.sendStatus(403);
+      return;
+    }
+    if (req.method !== "POST") {
+      res.sendStatus(405);
+      return;
+    }
+    if (!signatureValide(req.rawBody, req.get("x-hub-signature-256"), WHATSAPP_SECRET_APP.value())) {
+      res.sendStatus(401);
+      return;
+    }
+
+    const maintenant = Date.now();
+    for (const message of extraireMessages(req.body)) {
+      const attente = await db
+        .collection("verifications")
+        .where("telephone", "==", message.de)
+        .where("statut", "==", "en_attente")
+        .get();
+      for (const doc of attente.docs) {
+        if (!messageConfirme(doc.data() as VerificationDoc, message, maintenant)) continue;
+        await doc.ref.update({ statut: "confirmee", confirmeeLeMs: maintenant });
+        // Réponse au client (gratuite : elle suit son propre message).
+        await envoyerWhatsapp({
+          messaging_product: "whatsapp",
+          to: message.de.replace(/\D/g, ""),
+          type: "text",
+          text: { body: "Merci, votre numéro est vérifié. Vous pouvez revenir dans l'application ARZIKI." },
+        }).catch(() => undefined);
+      }
+    }
+    // Toujours répondre 200 à Meta, sinon il renvoie le message.
+    res.sendStatus(200);
+  },
 );

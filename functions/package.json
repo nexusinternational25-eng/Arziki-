@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc && node -e \"require('fs').copyFileSync('../config/firebase.json','lib/src/firebase.json')\"",
-    "test": "vitest run test/acces.test.ts",
+    "test": "vitest run test/acces.test.ts test/whatsapp.test.ts",
     "test:regles": "firebase emulators:exec --config ../firebase.json --only firestore,storage --project demo-arziki \"vitest run test/regles.test.ts\"",
     "creer-super-admin": "npm run build && node lib/scripts/creer-super-admin.js"
   },

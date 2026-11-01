@@ -470,3 +470,14 @@ Le propriétaire n'est pas développeur. Claude Code travaille comme un chef de 
 
 - Le nom du propriétaire n'apparaît **nulle part** dans l'application, la console ni le site : on écrit seulement « CEO de NEXUS International ». Le test `test/refonte_test.dart` le vérifie.
 - Les textes légaux sont publiés en **version 1.0** (1er novembre 2026), sans mention « provisoire » ni « en attente de validation ». Toute révision par l'avocat donnera une nouvelle version (1.1, 2.0...), que les utilisateurs accepteront de nouveau.
+
+### 22.3 Vérification du numéro : WhatsApp d'abord, SMS en secours (décision du 1er novembre 2026)
+
+- **Voie principale** : le client appuie sur « Vérifier avec WhatsApp ». WhatsApp s'ouvre avec un message déjà écrit (contenant un code), adressé au numéro WhatsApp Business d'ARZIKI ; le client l'envoie. Le webhook `webhookWhatsapp` (signature Meta vérifiée) confirme la vérification si le numéro de l'expéditeur et le code correspondent. Recevoir un message ne coûte rien à ARZIKI.
+- **Secours** : code à 6 chiffres envoyé par WhatsApp (modèle d'authentification `arziki_code`, en français), puis par SMS (Firebase Authentication) en dernier recours.
+- Fonctions : `demarrerVerification`, `finaliserVerification` (renvoie un jeton de connexion Firebase avec la revendication `telephone_verifie`), `webhookWhatsapp`. Logique pure et testée dans `functions/src/whatsapp.ts`. Collections `verifications` et `limites_verification` : aucun accès depuis l'application.
+- Règles : code haché, valable 10 minutes, 5 essais, 5 demandes par heure et par numéro, une vérification ne sert qu'une fois.
+- Le client ne peut pas être débité du coût d'un message reçu : le coût (faible) est couvert par les cotisations et frais de dossier. Au quotidien, l'application s'ouvre avec le code PIN ou l'empreinte (gratuit).
+- Réglages (jamais dans Git) : secrets Firebase `WHATSAPP_JETON`, `WHATSAPP_SECRET_APP`, `WHATSAPP_JETON_WEBHOOK` ; paramètres `WHATSAPP_ID_NUMERO`, `WHATSAPP_NUMERO_ARZIKI`. Tant qu'ils ne sont pas remplis, l'application propose le SMS.
+- À fournir par le propriétaire : une puce dédiée à ARZIKI (non utilisée dans l'application WhatsApp ordinaire) et la vérification de NEXUS International chez Meta (guide : `docs/mise_en_service.md`).
+- Administrateurs : jamais de WhatsApp ni de SMS, seulement e-mail, mot de passe et double facteur.

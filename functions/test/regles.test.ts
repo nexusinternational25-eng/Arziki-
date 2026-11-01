@@ -128,6 +128,16 @@ describe("invitations, candidatures et journal", () => {
   });
 });
 
+describe("vérifications WhatsApp", () => {
+  it("aucune lecture ni écriture depuis l'application, même pour le super administrateur", async () => {
+    const sa = db("sa", "super_admin", true);
+    await assertFails(getDoc(doc(sa, "verifications/v1")));
+    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), "verifications/v1")));
+    await assertFails(setDoc(doc(env.unauthenticatedContext().firestore(), "verifications/v2"), { statut: "confirmee" }));
+    await assertFails(setDoc(doc(db("membre", "membre"), "limites_verification/+22890000021"), { demandes: [] }));
+  });
+});
+
 describe("opérations du Cercle", () => {
   it("un membre vérifié voit les opérations PME ouvertes, pas les grands comptes", async () => {
     await assertSucceeds(getDoc(doc(db("membre", "membre"), "operations/pme")));

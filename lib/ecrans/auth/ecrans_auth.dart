@@ -1,4 +1,4 @@
-// Inscription et connexion : téléphone + code SMS pour les clients,
+// Inscription et connexion : téléphone vérifié par WhatsApp (SMS en secours) pour les clients,
 // e-mail + mot de passe + double facteur pour l'administration.
 
 import 'package:flutter/material.dart';
@@ -14,6 +14,7 @@ import '../../core/textes_legaux.dart';
 import '../../router/garde_roles.dart';
 import '../../theme/arziki_theme.dart';
 import '../../ui/composants.dart';
+import 'verification_numero.dart';
 
 /// Indicatifs des pays de l'UEMOA (Togo par défaut).
 const indicatifsUemoa = {
@@ -206,12 +207,11 @@ class EcranInscription extends ConsumerStatefulWidget {
 
 class _EcranInscriptionState extends ConsumerState<EcranInscription> {
   final _tel = TextEditingController();
-  final _code = TextEditingController();
   String _indicatif = '+228';
   bool _cgAcceptees = false; // jamais pré-cochée
-  bool _codeEnvoye = false;
-  bool _enCours = false;
-  String? _erreur;
+  bool _verrouille = false; // numéro en cours de vérification
+  // Clé fixe : la vérification garde son état quand l'écran change autour d'elle.
+  final _cleVerification = GlobalKey();
 
   bool get _telephoneImpose => widget.telephone != null;
 
@@ -228,45 +228,18 @@ class _EcranInscriptionState extends ConsumerState<EcranInscription> {
 
   String get _telephone => '$_indicatif${_tel.text}';
 
-  Future<void> _envoyer() async {
-    setState(() {
-      _enCours = true;
-      _erreur = null;
-    });
-    try {
-      await ref.read(depotAuthProvider).envoyerCodeSms(_telephone);
-      setState(() => _codeEnvoye = true);
-    } on ErreurAuth catch (e) {
-      setState(() => _erreur = e.message);
-    } finally {
-      if (mounted) setState(() => _enCours = false);
-    }
-  }
-
-  Future<void> _valider() async {
-    setState(() {
-      _enCours = true;
-      _erreur = null;
-    });
-    try {
-      final u = await ref.read(depotAuthProvider).inscrireParTelephone(
-            DemandeInscription(
-              parcours: widget.parcours,
-              telephone: _telephone,
-              cgVersion: TextesLegaux.versionConditions,
-              codeInvitation: widget.codeInvitation,
-            ),
-            _code.text,
-          );
-      ref.read(sessionProvider.notifier).connecter(u);
-      if (mounted) context.go(Chemins.enAttente);
-    } on ErreurAuth catch (e) {
-      setState(() => _erreur = e.message);
-    } on ErreurAcces catch (e) {
-      setState(() => _erreur = e.message);
-    } finally {
-      if (mounted) setState(() => _enCours = false);
-    }
+  Future<void> _inscrire(PreuveTelephone preuve) async {
+    final u = await ref.read(depotAuthProvider).inscrireParTelephone(
+          DemandeInscription(
+            parcours: widget.parcours,
+            telephone: _telephone,
+            cgVersion: TextesLegaux.versionConditions,
+            codeInvitation: widget.codeInvitation,
+          ),
+          preuve,
+        );
+    ref.read(sessionProvider.notifier).connecter(u);
+    if (mounted) context.go(Chemins.enAttente);
   }
 
   @override
@@ -285,13 +258,13 @@ class _EcranInscriptionState extends ConsumerState<EcranInscription> {
           indicatif: _indicatif,
           onIndicatif: (v) => setState(() => _indicatif = v),
           controleur: _tel,
-          actif: !_codeEnvoye && !_telephoneImpose,
+          actif: !_verrouille && !_telephoneImpose,
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: ArzikiEspaces.m),
         CheckboxListTile(
           value: _cgAcceptees,
-          onChanged: _codeEnvoye ? null : (v) => setState(() => _cgAcceptees = v ?? false),
+          onChanged: _verrouille ? null : (v) => setState(() => _cgAcceptees = v ?? false),
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
           title: const Text(
@@ -299,25 +272,15 @@ class _EcranInscriptionState extends ConsumerState<EcranInscription> {
           ),
           subtitle: const Text('Version ${TextesLegaux.versionConditions}'),
         ),
-        if (_codeEnvoye) ...[
-          const SizedBox(height: ArzikiEspaces.m),
-          ChampCode(controleur: _code),
-        ],
-        if (_erreur != null) ...[
-          const SizedBox(height: ArzikiEspaces.m),
-          Encadre(_erreur!, type: TypeEncadre.erreur),
-        ],
         const SizedBox(height: ArzikiEspaces.l),
-        if (!_codeEnvoye)
-          FilledButton(
-            onPressed: _enCours || !_cgAcceptees || _tel.text.length < 8 ? null : _envoyer,
-            child: const Text('Recevoir mon code par SMS'),
-          )
-        else
-          FilledButton(
-            onPressed: _enCours ? null : _valider,
-            child: const Text('Valider'),
-          ),
+        VerificationNumero(
+          key: _cleVerification,
+          telephone: () => _telephone,
+          actif: _cgAcceptees && _tel.text.length >= 8,
+          onVerrouillage: (v) => setState(() => _verrouille = v),
+          onPreuve: _inscrire,
+          libelleValider: 'Créer mon compte',
+        ),
       ]),
     );
   }
@@ -336,37 +299,19 @@ class EcranConnexion extends ConsumerStatefulWidget {
 
 class _EcranConnexionState extends ConsumerState<EcranConnexion> {
   final _tel = TextEditingController();
-  final _code = TextEditingController();
   String _indicatif = '+228';
-  bool _codeEnvoye = false;
-  bool _enCours = false;
-  String? _erreur;
+  bool _verrouille = false;
+  final _cleVerification = GlobalKey();
 
-  Future<void> _action() async {
-    setState(() {
-      _enCours = true;
-      _erreur = null;
-    });
-    final auth = ref.read(depotAuthProvider);
-    final telephone = '$_indicatif${_tel.text}';
-    try {
-      if (!_codeEnvoye) {
-        await auth.envoyerCodeSms(telephone);
-        setState(() => _codeEnvoye = true);
-      } else {
-        final u = await auth.connecterParTelephone(telephone, _code.text);
-        if (u == null) {
-          setState(() => _erreur = "Aucun compte n'existe pour ce numéro. Revenez en arrière pour en créer un.");
-          return;
-        }
-        ref.read(sessionProvider.notifier).connecter(u);
-        if (mounted) context.go(Chemins.demarrage);
-      }
-    } on ErreurAuth catch (e) {
-      setState(() => _erreur = e.message);
-    } finally {
-      if (mounted) setState(() => _enCours = false);
+  String get _telephone => '$_indicatif${_tel.text}';
+
+  Future<void> _connecter(PreuveTelephone preuve) async {
+    final u = await ref.read(depotAuthProvider).connecterParTelephone(_telephone, preuve);
+    if (u == null) {
+      throw const ErreurAuth("Aucun compte n'existe pour ce numéro. Revenez en arrière pour en créer un.");
     }
+    ref.read(sessionProvider.notifier).connecter(u);
+    if (mounted) context.go(Chemins.demarrage);
   }
 
   @override
@@ -374,31 +319,32 @@ class _EcranConnexionState extends ConsumerState<EcranConnexion> {
     return Scaffold(
       appBar: AppBar(title: const Text('Se connecter')),
       body: Colonne(children: [
+        Text('Votre numéro de téléphone', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: ArzikiEspaces.s),
+        const Text('Nous vérifions votre numéro par WhatsApp. Le SMS reste possible en secours.'),
+        const SizedBox(height: ArzikiEspaces.l),
         ChampTelephone(
           indicatif: _indicatif,
           onIndicatif: (v) => setState(() => _indicatif = v),
           controleur: _tel,
-          actif: !_codeEnvoye,
+          actif: !_verrouille,
+          onChanged: (_) => setState(() {}),
         ),
-        if (AppConfig.estDemo && !_codeEnvoye) ...[
+        if (AppConfig.estDemo && !_verrouille) ...[
           const SizedBox(height: ArzikiEspaces.s),
           const Encadre(
             'Démonstration : 90 00 00 21 (membre), 90 00 00 31 (partenaire), 90 00 00 11 (entreprise), '
             '90 00 00 41 (fournisseur), 90 00 00 51 (notaire), 90 00 00 61 (candidat).',
           ),
         ],
-        if (_codeEnvoye) ...[
-          const SizedBox(height: ArzikiEspaces.m),
-          ChampCode(controleur: _code),
-        ],
-        if (_erreur != null) ...[
-          const SizedBox(height: ArzikiEspaces.m),
-          Encadre(_erreur!, type: TypeEncadre.erreur),
-        ],
         const SizedBox(height: ArzikiEspaces.l),
-        FilledButton(
-          onPressed: _enCours ? null : _action,
-          child: Text(_codeEnvoye ? 'Me connecter' : 'Recevoir mon code par SMS'),
+        VerificationNumero(
+          key: _cleVerification,
+          telephone: () => _telephone,
+          actif: _tel.text.length >= 8,
+          onVerrouillage: (v) => setState(() => _verrouille = v),
+          onPreuve: _connecter,
+          libelleValider: 'Me connecter',
         ),
       ]),
     );

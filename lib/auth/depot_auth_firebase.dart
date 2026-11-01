@@ -1,5 +1,7 @@
 // Authentification de production avec Firebase Auth :
-// - clients : numéro de téléphone + code SMS ;
+// - clients : numéro de téléphone vérifié par WhatsApp (fonctions serveur
+//   demarrerVerification et finaliserVerification, puis jeton de connexion),
+//   ou par SMS en secours (Firebase Authentication) ;
 // - administration : e-mail + mot de passe + double facteur (TOTP),
 //   fonction « Multi-factor » de Firebase Authentication with Identity Platform.
 
@@ -27,6 +29,10 @@ class DepotAuthFirebase implements DepotAuth {
   final FirebaseFunctions _fonctions;
 
   String? _verificationId;
+  // Vérification WhatsApp en cours.
+  String? _idCodeWhatsapp;
+  CanalCode? _dernierCanal;
+  String? _jetonWhatsapp;
   ConfirmationResult? _confirmationWeb;
   MultiFactorResolver? _resolveur;
 
@@ -39,8 +45,58 @@ class DepotAuthFirebase implements DepotAuth {
         _ => 'Connexion impossible pour le moment.',
       });
 
+  ErreurAuth _traduireFonction(FirebaseFunctionsException e) =>
+      ErreurAuth(e.message ?? 'Vérification impossible pour le moment.');
+
   @override
-  Future<void> envoyerCodeSms(String telephone) async {
+  Future<VerificationParMessage> demarrerVerificationParMessage(String telephone) async {
+    try {
+      final r = await _fonctions.httpsCallable('demarrerVerification').call<Map<String, dynamic>>({
+        'telephone': ReglesAcces.normaliserTelephone(telephone),
+        'canal': 'message',
+      });
+      _jetonWhatsapp = null;
+      return VerificationParMessage(
+        id: r.data['id'] as String,
+        message: r.data['message'] as String,
+        lien: Uri.parse(r.data['lien'] as String),
+      );
+    } on FirebaseFunctionsException catch (e) {
+      throw _traduireFonction(e);
+    }
+  }
+
+  @override
+  Future<bool> verificationConfirmee(String id) async {
+    try {
+      final r = await _fonctions.httpsCallable('finaliserVerification').call<Map<String, dynamic>>({'id': id});
+      if (r.data['etat'] != 'valide') return false;
+      _jetonWhatsapp = r.data['jeton'] as String;
+      return true;
+    } on FirebaseFunctionsException catch (e) {
+      throw _traduireFonction(e);
+    }
+  }
+
+  @override
+  Future<void> envoyerCode(String telephone, CanalCode canal) async {
+    _dernierCanal = canal;
+    if (canal == CanalCode.whatsapp) {
+      try {
+        final r = await _fonctions.httpsCallable('demarrerVerification').call<Map<String, dynamic>>({
+          'telephone': ReglesAcces.normaliserTelephone(telephone),
+          'canal': 'code',
+        });
+        _idCodeWhatsapp = r.data['id'] as String;
+      } on FirebaseFunctionsException catch (e) {
+        throw _traduireFonction(e);
+      }
+      return;
+    }
+    await _envoyerSms(telephone);
+  }
+
+  Future<void> _envoyerSms(String telephone) async {
     final numero = ReglesAcces.normaliserTelephone(telephone);
     try {
       if (kIsWeb) {
@@ -63,6 +119,32 @@ class DepotAuthFirebase implements DepotAuth {
       await envoye.future;
     } on FirebaseAuthException catch (e) {
       throw _traduire(e);
+    }
+  }
+
+  /// Connecte à Firebase à partir de la preuve (jeton WhatsApp ou code SMS).
+  Future<User> _valider(PreuveTelephone preuve) async {
+    switch (preuve) {
+      case PreuveMessage():
+        final jeton = _jetonWhatsapp;
+        if (jeton == null) throw const ErreurAuth("Votre message WhatsApp n'est pas encore arrivé.");
+        _jetonWhatsapp = null;
+        return (await _auth.signInWithCustomToken(jeton)).user!;
+      case PreuveCode(:final code) when _dernierCanal == CanalCode.whatsapp:
+        final id = _idCodeWhatsapp;
+        if (id == null) throw const ErreurAuth('Demandez d\'abord un code.');
+        try {
+          final r = await _fonctions
+              .httpsCallable('finaliserVerification')
+              .call<Map<String, dynamic>>({'id': id, 'code': code.trim()});
+          return (await _auth.signInWithCustomToken(r.data['jeton'] as String)).user!;
+        } on FirebaseFunctionsException catch (e) {
+          throw _traduireFonction(e);
+        } on FirebaseAuthException catch (e) {
+          throw _traduire(e);
+        }
+      case PreuveCode(:final code):
+        return _validerCode(code);
     }
   }
 
@@ -90,8 +172,8 @@ class DepotAuthFirebase implements DepotAuth {
   }
 
   @override
-  Future<Utilisateur?> connecterParTelephone(String telephone, String code) async {
-    final user = await _validerCode(code);
+  Future<Utilisateur?> connecterParTelephone(String telephone, PreuveTelephone preuve) async {
+    final user = await _valider(preuve);
     final profil = await _profil(user.uid);
     if (profil == null) {
       await _auth.signOut();
@@ -105,8 +187,8 @@ class DepotAuthFirebase implements DepotAuth {
   }
 
   @override
-  Future<Utilisateur> inscrireParTelephone(DemandeInscription demande, String code) async {
-    final user = await _validerCode(code);
+  Future<Utilisateur> inscrireParTelephone(DemandeInscription demande, PreuveTelephone preuve) async {
+    final user = await _valider(preuve);
     try {
       await _fonctions.httpsCallable('inscrire').call<Map<String, dynamic>>({
         'parcours': demande.parcours.code,

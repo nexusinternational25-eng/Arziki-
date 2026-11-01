@@ -1,4 +1,5 @@
-// Authentification de démonstration : SMS simulé (code 123456) pour les clients ;
+// Authentification de démonstration : vérification du numéro simulée pour les clients
+// (message WhatsApp confirmé automatiquement, code 123456 par WhatsApp ou SMS) ;
 // pour l'administration, vrai contrôle du mot de passe et du code à 6 chiffres.
 
 import '../auth/acces_admin.dart';
@@ -36,9 +37,8 @@ class DepotAuthDemo implements DepotAuth {
     _echecs.remove(cle);
   }
 
-  @override
-  Future<void> envoyerCodeSms(String telephone) async {
-    final t = ReglesAcces.normaliserTelephone(telephone);
+  /// Limite commune à tous les moyens de vérification : 5 demandes par heure.
+  void _compterDemande(String t) {
     final ilYaUneHeure = base.maintenant().subtract(const Duration(hours: 1));
     final envois = (_envoisSms[t] ?? [])..removeWhere((d) => d.isBefore(ilYaUneHeure));
     if (envois.length >= maxSmsParHeure) {
@@ -48,10 +48,57 @@ class DepotAuthDemo implements DepotAuth {
     _envoisSms[t] = envois;
   }
 
+  // Vérifications par message WhatsApp en cours : identifiant -> numéro, nombre de consultations.
+  final Map<String, ({String telephone, int consultations, bool utilisee})> _messages = {};
+  int _compteurMessages = 0;
+
   @override
-  Future<Utilisateur?> connecterParTelephone(String telephone, String code) async {
+  Future<VerificationParMessage> demarrerVerificationParMessage(String telephone) async {
     final t = ReglesAcces.normaliserTelephone(telephone);
-    _verifierCode(t, code);
+    _compterDemande(t);
+    final id = 'demo-${++_compteurMessages}';
+    _messages[id] = (telephone: t, consultations: 0, utilisee: false);
+    const message = 'Bonjour ARZIKI, voici mon code de vérification : 482915';
+    return VerificationParMessage(
+      id: id,
+      message: message,
+      lien: Uri.parse('https://wa.me/22891978080?text=${Uri.encodeComponent(message)}'),
+    );
+  }
+
+  /// En démonstration, le message est « reçu » à la deuxième consultation (environ 3 secondes).
+  @override
+  Future<bool> verificationConfirmee(String id) async {
+    final v = _messages[id];
+    if (v == null) throw const ErreurAuth('Vérification introuvable. Recommencez.');
+    final n = v.consultations + 1;
+    _messages[id] = (telephone: v.telephone, consultations: n, utilisee: v.utilisee);
+    return n >= 2;
+  }
+
+  @override
+  Future<void> envoyerCode(String telephone, CanalCode canal) async {
+    _compterDemande(ReglesAcces.normaliserTelephone(telephone));
+  }
+
+  void _verifierPreuve(String t, PreuveTelephone preuve) {
+    switch (preuve) {
+      case PreuveCode(:final code):
+        _verifierCode(t, code);
+      case PreuveMessage(:final id):
+        final v = _messages[id];
+        if (v == null || v.telephone != t || v.consultations < 2) {
+          throw const ErreurAuth("Votre message WhatsApp n'est pas encore arrivé.");
+        }
+        if (v.utilisee) throw const ErreurAuth('Cette vérification a déjà été utilisée. Recommencez.');
+        _messages[id] = (telephone: v.telephone, consultations: v.consultations, utilisee: true);
+    }
+  }
+
+  @override
+  Future<Utilisateur?> connecterParTelephone(String telephone, PreuveTelephone preuve) async {
+    final t = ReglesAcces.normaliserTelephone(telephone);
+    _verifierPreuve(t, preuve);
     final u = base.parTelephone(t);
     if (u != null && u.role.estAdministration) {
       throw const ErreurAuth('Les administrateurs se connectent avec leur adresse e-mail.');
@@ -60,9 +107,9 @@ class DepotAuthDemo implements DepotAuth {
   }
 
   @override
-  Future<Utilisateur> inscrireParTelephone(DemandeInscription demande, String code) async {
+  Future<Utilisateur> inscrireParTelephone(DemandeInscription demande, PreuveTelephone preuve) async {
     final t = ReglesAcces.normaliserTelephone(demande.telephone);
-    _verifierCode(t, code);
+    _verifierPreuve(t, preuve);
     if (base.parTelephone(t) != null) {
       throw const ErreurAuth('Ce numéro a déjà un compte. Utilisez « Se connecter ».');
     }

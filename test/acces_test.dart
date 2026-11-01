@@ -30,12 +30,53 @@ void main() {
   });
 
   Future<Utilisateur> inscrire(Parcours p, String tel, {String? code}) async {
-    await auth.envoyerCodeSms(tel);
+    await auth.envoyerCode(tel, CanalCode.sms);
     return auth.inscrireParTelephone(
       DemandeInscription(parcours: p, telephone: tel, cgVersion: '1.0', codeInvitation: code),
-      '123456',
+      const PreuveCode('123456'),
     );
   }
+
+  group('Vérification du numéro par WhatsApp (voie principale)', () {
+    test('le client envoie le message, ARZIKI le reçoit, le compte est créé', () async {
+      final v = await auth.demarrerVerificationParMessage('90 77 66 55');
+      expect(v.lien.host, 'wa.me');
+      expect(v.message, contains('code de vérification'));
+      // Tant que le message n'est pas arrivé, impossible de s'inscrire.
+      expect(await auth.verificationConfirmee(v.id), isFalse);
+      await expectLater(
+        auth.inscrireParTelephone(
+          const DemandeInscription(parcours: Parcours.entreprise, telephone: '+22890776655', cgVersion: '1.0'),
+          PreuveMessage(v.id),
+        ),
+        throwsA(isA<ErreurAuth>()),
+      );
+      expect(await auth.verificationConfirmee(v.id), isTrue);
+      final u = await auth.inscrireParTelephone(
+        const DemandeInscription(parcours: Parcours.entreprise, telephone: '+22890776655', cgVersion: '1.0'),
+        PreuveMessage(v.id),
+      );
+      expect(u.telephone, '+22890776655');
+    });
+
+    test("une vérification ne sert qu'une fois et seulement pour son numéro", () async {
+      final v = await auth.demarrerVerificationParMessage('+22890000021');
+      await auth.verificationConfirmee(v.id);
+      await auth.verificationConfirmee(v.id);
+      expect(() => auth.connecterParTelephone('+22890000031', PreuveMessage(v.id)), throwsA(isA<ErreurAuth>()));
+      expect((await auth.connecterParTelephone('+22890000021', PreuveMessage(v.id)))?.role, Role.membre);
+      expect(() => auth.connecterParTelephone('+22890000021', PreuveMessage(v.id)), throwsA(isA<ErreurAuth>()));
+    });
+
+    test('secours : code reçu par WhatsApp, limite de 5 demandes par heure', () async {
+      await auth.envoyerCode('+22890000021', CanalCode.whatsapp);
+      expect((await auth.connecterParTelephone('+22890000021', const PreuveCode('123456')))?.role, Role.membre);
+      for (var i = 0; i < 4; i++) {
+        await auth.demarrerVerificationParMessage('+22890000021');
+      }
+      expect(() => auth.envoyerCode('+22890000021', CanalCode.sms), throwsA(isA<ErreurAuth>()));
+    });
+  });
 
   group('Investisseur privé invité par le super administrateur', () {
     test('parcours complet : invitation, inscription, validation, accès au Cercle', () async {
@@ -204,24 +245,24 @@ void main() {
 
   group('Connexion', () {
     test('un administrateur ne se connecte pas par SMS', () async {
-      expect(() => auth.connecterParTelephone('+22890000001', '123456'), throwsA(isA<ErreurAuth>()));
+      expect(() => auth.connecterParTelephone('+22890000001', const PreuveCode('123456')), throwsA(isA<ErreurAuth>()));
     });
 
     test('mauvais code : refus, puis blocage après 5 essais', () async {
       for (var i = 0; i < 5; i++) {
-        await expectLater(auth.connecterParTelephone('+22890000021', '000000'), throwsA(isA<ErreurAuth>()));
+        await expectLater(auth.connecterParTelephone('+22890000021', const PreuveCode('000000')), throwsA(isA<ErreurAuth>()));
       }
       await expectLater(
-        auth.connecterParTelephone('+22890000021', '123456'),
+        auth.connecterParTelephone('+22890000021', const PreuveCode('123456')),
         throwsA(predicate((e) => e.toString().contains('Trop de tentatives'))),
       );
     });
 
     test('limite de 5 SMS par heure et par numéro', () async {
       for (var i = 0; i < 5; i++) {
-        await auth.envoyerCodeSms('+22890000021');
+        await auth.envoyerCode('+22890000021', CanalCode.sms);
       }
-      expect(() => auth.envoyerCodeSms('+22890000021'), throwsA(isA<ErreurAuth>()));
+      expect(() => auth.envoyerCode('+22890000021', CanalCode.sms), throwsA(isA<ErreurAuth>()));
     });
 
     test('un numéro déjà inscrit ne crée pas un second compte', () {

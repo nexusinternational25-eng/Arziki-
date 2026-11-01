@@ -1,6 +1,8 @@
 // Contrat d'authentification. Deux mises en oeuvre :
-// - DepotAuthDemo : données fictives en mémoire, code SMS 123456 ;
-// - DepotAuthFirebase (jalon 2, quand le projet Firebase sera fourni).
+// - DepotAuthDemo : données fictives en mémoire, code 123456, WhatsApp simulé ;
+// - DepotAuthFirebase : production.
+// Vérification du numéro (décision du 1er novembre 2026) : WhatsApp d'abord,
+// SMS en secours. Voir CLAUDE.md, section 22.3.
 // Les écrans ne connaissent que ce contrat, jamais Firebase directement.
 
 import '../core/roles.dart';
@@ -36,7 +38,7 @@ enum Parcours {
       };
 }
 
-/// Données nécessaires pour créer un compte après le code SMS.
+/// Données nécessaires pour créer un compte après la vérification du numéro.
 class DemandeInscription {
   const DemandeInscription({
     required this.parcours,
@@ -58,16 +60,61 @@ class ErreurAuth implements Exception {
   String toString() => message;
 }
 
+/// Moyen de recevoir un code à 6 chiffres.
+enum CanalCode {
+  whatsapp('WhatsApp'),
+  sms('SMS');
+
+  const CanalCode(this.libelle);
+  final String libelle;
+}
+
+/// Vérification où le client envoie lui-même un message WhatsApp à ARZIKI.
+class VerificationParMessage {
+  const VerificationParMessage({required this.id, required this.message, required this.lien});
+  final String id;
+
+  /// Texte déjà rédigé, avec le code.
+  final String message;
+
+  /// Lien qui ouvre WhatsApp avec ce message, adressé au numéro d'ARZIKI.
+  final Uri lien;
+}
+
+/// Ce qui prouve que la personne possède bien ce numéro.
+sealed class PreuveTelephone {
+  const PreuveTelephone();
+}
+
+/// Code à 6 chiffres reçu par WhatsApp ou par SMS.
+class PreuveCode extends PreuveTelephone {
+  const PreuveCode(this.code);
+  final String code;
+}
+
+/// Message WhatsApp envoyé par le client et reçu par ARZIKI.
+class PreuveMessage extends PreuveTelephone {
+  const PreuveMessage(this.id);
+  final String id;
+}
+
 abstract class DepotAuth {
-  /// Envoie le code SMS. Lève ErreurAuth si trop de tentatives.
-  Future<void> envoyerCodeSms(String telephone);
+  /// Voie principale : prépare le message WhatsApp que le client va envoyer.
+  Future<VerificationParMessage> demarrerVerificationParMessage(String telephone);
 
-  /// Vérifie le code et connecte un compte existant.
+  /// Vrai quand ARZIKI a bien reçu le message du client.
+  Future<bool> verificationConfirmee(String id);
+
+  /// Voies de secours : envoie un code par WhatsApp ou par SMS.
+  /// Lève ErreurAuth si trop de tentatives.
+  Future<void> envoyerCode(String telephone, CanalCode canal);
+
+  /// Vérifie la preuve et connecte un compte existant.
   /// Renvoie null si aucun compte n'existe pour ce numéro.
-  Future<Utilisateur?> connecterParTelephone(String telephone, String code);
+  Future<Utilisateur?> connecterParTelephone(String telephone, PreuveTelephone preuve);
 
-  /// Vérifie le code et crée un nouveau compte (statut en_attente).
-  Future<Utilisateur> inscrireParTelephone(DemandeInscription demande, String code);
+  /// Vérifie la preuve et crée un nouveau compte (statut en_attente).
+  Future<Utilisateur> inscrireParTelephone(DemandeInscription demande, PreuveTelephone preuve);
 
   /// Première étape de connexion administrateur (e-mail + mot de passe).
   Future<void> connecterAdmin(String email, String motDePasse);

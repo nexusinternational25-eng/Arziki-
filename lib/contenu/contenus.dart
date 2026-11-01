@@ -217,7 +217,7 @@ final Map<String, PageContenu> pagesParDefaut = {
     sections: [
       SectionContenu('Créer mon compte',
           "1. Ouvrez l'application et choisissez votre profil.\n2. Saisissez votre numéro de téléphone et acceptez "
-              "les conditions.\n3. Entrez le code reçu par SMS.\n4. Déposez vos pièces d'identité.\n5. Attendez la "
+              "les conditions.\n3. Vérifiez votre numéro par WhatsApp (ou par SMS).\n4. Déposez vos pièces d'identité.\n5. Attendez la "
               'validation : vous recevez une notification.'),
       SectionContenu('Déposer une demande de Commande Financée',
           "1. Touchez le bouton orange « Nouvelle demande ».\n2. Renseignez l'acheteur, la commande, le fournisseur "
@@ -250,7 +250,7 @@ final Map<String, PageContenu> pagesParDefaut = {
               'International.'),
       SectionContenu('3. Inscription et compte',
           "L'inscription est réservée aux personnes majeures et aux entreprises régulièrement immatriculées. Le compte "
-              'est personnel : vous êtes responsable de la confidentialité de vos codes (code SMS, code PIN, mot de '
+              'est personnel : vous êtes responsable de la confidentialité de vos codes (codes de vérification, code PIN, mot de '
               "passe) et de toute action réalisée depuis votre compte. Un compte reste en attente jusqu'à la "
               "vérification de l'identité de son titulaire par ARZIKI, qui peut refuser une inscription sans avoir à "
               'motiver sa décision.'),
