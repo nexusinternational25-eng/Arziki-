@@ -105,7 +105,7 @@ class CatalogueServices extends ConsumerWidget {
 
     if (integre) return corps;
     return Scaffold(
-      appBar: barreArziki(context, titre: 'Services'),
+      appBar: barreArziki(context),
       bottomNavigationBar: const BarreVisiteur(),
       body: corps,
     );
@@ -443,7 +443,7 @@ class EcranFormations extends ConsumerWidget {
     final passees = u == null ? <SessionFormation>[] : etat.sessions.where((s) => !aVenir.contains(s) && s.inscrits.contains(u.uid)).toList();
 
     return Scaffold(
-      appBar: barreArziki(context, titre: 'Formations'),
+      appBar: barreArziki(context),
       bottomNavigationBar: const BarreVisiteur(),
       body: Colonne(children: [
         const EnTeteImage(image: Images.equipe, titre: 'Formations', sousTitre: 'Sessions de groupe et formations en entreprise', hauteur: 180),

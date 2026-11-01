@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/session.dart';
 import '../../comptes/depot_comptes.dart';
 import '../../config/app_config.dart';
+import '../../core/images.dart';
 import '../../core/kyc.dart';
 import '../../core/roles.dart';
 import '../../core/textes_legaux.dart';
@@ -15,6 +16,8 @@ import '../../models/acces.dart';
 import '../../router/garde_roles.dart';
 import '../../theme/arziki_theme.dart';
 import '../../ui/composants.dart';
+import '../accueil/sections_accueil.dart';
+import '../navigation/cadre_app.dart';
 
 /// Bouton de déconnexion pour les barres de titre.
 class BoutonDeconnexion extends ConsumerWidget {
@@ -42,9 +45,11 @@ class _Etape extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return CarteArziki(
+      padding: const EdgeInsets.symmetric(horizontal: ArzikiEspaces.s, vertical: 2),
       child: ListTile(
-        leading: Icon(fait ? Icons.check_circle : Icons.radio_button_unchecked,
+        contentPadding: const EdgeInsets.symmetric(horizontal: ArzikiEspaces.s),
+        leading: Icon(fait ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
             color: fait ? ArzikiCouleurs.vert : ArzikiCouleurs.orange),
         title: Text(titre),
         subtitle: detail == null ? null : Text(detail!),
@@ -63,13 +68,29 @@ class EcranEnAttente extends ConsumerWidget {
     final candidat = u.role == Role.candidatCercle;
     final kycFait = u.kycStatut == StatutKyc.enCours || u.kycStatut == StatutKyc.valide;
 
+    final t = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Mon compte'), actions: const [BoutonDeconnexion()]),
+      drawer: const MenuLateral(),
+      appBar: barreArziki(context, logo: true),
       body: Colonne(children: [
-        Text('Votre compte est en cours de vérification', style: Theme.of(context).textTheme.titleLarge),
+        Apparition(
+          child: EnTeteImage(
+            image: candidat ? Images.cercleDiaspora : Images.dirigeanteSignature,
+            hauteur: 190,
+            titre: u.prenom.isEmpty ? 'Bienvenue sur ARZIKI' : 'Bienvenue, ${u.prenom}',
+            sousTitre: '${u.role.libelle} · compte en cours de vérification',
+          ),
+        ),
+        const SizedBox(height: ArzikiEspaces.m),
+        Text('Plus que quelques étapes', style: t.titleLarge),
+        const SizedBox(height: ArzikiEspaces.xs),
+        Text(
+          candidat
+              ? "Votre identité est vérifiée par notre équipe, puis un administrateur examine votre candidature. Les opérations du Cercle restent invisibles d'ici là."
+              : 'Notre équipe vérifie votre identité. Vous recevrez une notification dès que votre compte sera activé.',
+          style: t.bodySmall,
+        ),
         const SizedBox(height: ArzikiEspaces.s),
-        Text('Profil : ${u.role.libelle}'),
-        const SizedBox(height: ArzikiEspaces.l),
         _Etape(
           'Vérification de votre identité',
           u.kycStatut == StatutKyc.valide,
@@ -90,12 +111,16 @@ class EcranEnAttente extends ConsumerWidget {
           false,
           detail: 'Vous recevrez une notification dès que votre compte sera activé.',
         ),
-        const SizedBox(height: ArzikiEspaces.l),
+        const SizedBox(height: ArzikiEspaces.m),
         OutlinedButton.icon(
           onPressed: () => ref.read(sessionProvider.notifier).rafraichir(),
-          icon: const Icon(Icons.refresh),
+          icon: const Icon(Icons.refresh_rounded),
           label: const Text('Actualiser'),
         ),
+        const TitreSection('En attendant, découvrez ARZIKI'),
+        const SectionCommentCaMarche(),
+        const CarrouselServices(),
+        const BlocConfiance(),
       ]),
     );
   }

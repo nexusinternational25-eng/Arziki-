@@ -441,3 +441,26 @@ users/{uid}.role       + valeur candidat_cercle
 ```
 
 Cloud Functions ajoutées : `inscrire` (crée le profil après la vérification du numéro par SMS et consomme l'invitation), `annulerInvitation`, `deposerCandidature`, `deciderCandidature`, `soumettreKyc`, `demanderComplementKyc`, `changerStatutCompte`, `creerCompteEquipe`, `signalerAccesRefuse`. Les actions d'administration exigent le double facteur dans le jeton (`firebase.sign_in_second_factor`), côté fonctions comme côté règles.
+
+---
+
+## 22. Collaboration avec le propriétaire (règles permanentes, décision du 1er novembre 2026)
+
+Le propriétaire n'est pas développeur. Claude Code travaille comme un chef de projet et développeur senior qui livre un produit fini à un client non technique.
+
+1. **Ces règles s'appliquent à toutes les sessions.**
+2. **Décider seul de tout ce qui est technique** (bibliothèques, architecture, structure du code, corrections). Ne poser une question que pour une décision d'affaires (prix, textes légaux, règles du Cercle, ce qu'un client doit voir), en français simple, avec 2 ou 3 choix et une recommandation.
+3. **Ne jamais demander au propriétaire de taper des commandes, de modifier du code ou de configurer quelque chose lui-même.** Si une action de sa part est indispensable (créer un compte, fournir une clé, déposer une image), l'expliquer étape par étape, comme à un débutant, avec ce qu'il doit voir à l'écran et des liens directs.
+4. **Viser le niveau d'une application financière professionnelle** (banque mobile, fintech reconnue) : design soigné, navigation claire, textes impeccables, aucune page vide, aucun bouton qui ne mène nulle part.
+5. **Vérifier son propre travail avant de le montrer** : lancer l'application, parcourir chaque écran pour chaque rôle, prendre des captures, les relire comme un client exigeant (alignements, couleurs, fautes, textes coupés, images floues, écrans vides), corriger puis recommencer jusqu'à ce que ce soit irréprochable ; vérifier qu'aucun mot interdit n'apparaît (garanti, sans risque, rendement assuré, taux d'intérêt, prêt).
+6. **Terminer chaque étape par un compte rendu simple**, sans jargon : ce qui a été fait (5 à 10 points), les captures des nouveaux écrans, le lien de la page Vercel et l'endroit où télécharger le nouvel APK, ce qu'il faut tester sur le téléphone, ce qui reste à faire.
+7. **Ne pas s'arrêter à mi-chemin** : découper soi-même les tâches longues et enchaîner ; en cas d'interruption, reprendre exactement là où le travail s'était arrêté.
+8. **Avant de dire « c'est fini »** : tests au vert, aucune erreur d'analyse, fusion dans `main`, nouvel APK construit, page Vercel à jour.
+
+### 22.1 Livraison (comment le produit arrive au propriétaire)
+
+- GitHub Actions (`.github/workflows/livraison.yml`) teste, construit l'APK et les versions web, puis publie la branche `livraison`.
+- Vercel (projet `arziki`, équipe `nexusinternational25-engs-projects`) affiche la branche `livraison` : https://arziki-rosy.vercel.app (page d'accueil, `ARZIKI.apk`, `/app/`, `/console/`).
+- Lien direct et permanent de l'APK : https://github.com/nexusinternational25-eng/Arziki-/releases/latest/download/ARZIKI.apk
+- Banque d'images : `assets/images` (27 photos, liste dans `lib/core/images.dart`). La photo n° 13 du document fourni est écartée (drapeau), la n° 16 est recadrée.
+- Logo principal : le « A » au chariot (`assets/logo/arziki_logo.png`, version blanche pour les fonds verts et le mode sombre, symbole seul pour l'icône).

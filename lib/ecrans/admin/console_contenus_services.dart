@@ -156,6 +156,7 @@ class _PageServicesAdminState extends ConsumerState<PageServicesAdmin> {
         ]),
         const SizedBox(height: ArzikiEspaces.m),
         SegmentedButton<int>(
+          showSelectedIcon: false,
           segments: const [
             ButtonSegment(value: 0, label: Text('Commandes'), icon: Icon(Icons.inbox_rounded)),
             ButtonSegment(value: 1, label: Text('Catalogue'), icon: Icon(Icons.sell_rounded)),
@@ -420,6 +421,7 @@ class _PageContenusAdminState extends ConsumerState<PageContenusAdmin> {
       corps: ListView(padding: const EdgeInsets.all(ArzikiEspaces.l), children: [
         const EnTetePage('Contenus de l\'application', 'Modifiez les textes visibles par les clients. Chaque modification est tracée.'),
         SegmentedButton<int>(
+          showSelectedIcon: false,
           segments: const [
             ButtonSegment(value: 0, label: Text('Pages')),
             ButtonSegment(value: 1, label: Text('Actualités')),

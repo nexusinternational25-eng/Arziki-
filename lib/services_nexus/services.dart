@@ -391,7 +391,12 @@ class ControleurServices extends Notifier<EtatServices> {
   DateTime Function() maintenant = DateTime.now;
 
   @override
-  EtatServices build() => EtatServices(
+  EtatServices build() {
+    // Démonstration : paiements datés par rapport à aujourd'hui, pour que les
+    // indicateurs du mois en cours restent parlants.
+    final j = DateTime.now();
+    DateTime ilYa(int jours) => j.subtract(Duration(days: jours));
+    return EtatServices(
         catalogue: List.of(catalogueParDefaut),
         formations: List.of(formationsParDefaut),
         sessions: List.of(sessionsParDefaut),
@@ -404,7 +409,7 @@ class ControleurServices extends Notifier<EtatServices> {
             creeLe: DateTime(2026, 10, 12),
             etape: EtapeCommande.enCours,
             montantDevis: 300000,
-            paiements: [(DateTime(2026, 10, 14), 150000)],
+            paiements: [(ilYa(1), 150000)],
           ),
           CommandeService(
             id: 'c2',
@@ -415,8 +420,9 @@ class ControleurServices extends Notifier<EtatServices> {
           ),
         ],
         alertesCarnet: {'u-ent-mine'},
-        inscriptionsFormation: [(DateTime(2026, 10, 5), 40000), (DateTime(2026, 10, 20), 45000), (DateTime(2026, 10, 24), 45000)],
+        inscriptionsFormation: [(ilYa(40), 40000), (ilYa(1), 45000), (ilYa(0), 45000)],
       );
+  }
 
   void _auditer(String acteur, String action, String cible, {String? apres}) =>
       ref.read(baseDemoProvider).auditer(acteur, action, cible, apres: apres);

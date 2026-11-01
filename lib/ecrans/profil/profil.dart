@@ -116,7 +116,7 @@ class EcranProfil extends ConsumerWidget {
       ),
       CarteArziki(
         child: Column(children: [
-          _Info('Téléphone', u.telephone ?? 'Non renseigné'),
+          _Info('Téléphone', u.telephone == null ? 'Non renseigné' : telephoneLisible(u.telephone)),
           _Info('E-mail', u.email ?? 'Non renseigné'),
           _Info('Ville', u.ville ?? 'Non renseignée'),
           if (u.niveau != null) _Info('Niveau dans le Cercle', u.niveau!.libelle),
@@ -212,7 +212,7 @@ class EcranDocuments extends ConsumerWidget {
     final pieces = piecesKyc(u.role);
     final fournies = u.kycStatut == StatutKyc.valide || u.kycStatut == StatutKyc.enCours;
     return Scaffold(
-      appBar: AppBar(title: const Text('Mes documents')),
+      appBar: AppBar(),
       body: Colonne(children: [
         const EnTetePage('Mes documents', 'Vos pièces sont chiffrées et visibles uniquement par vous et l\'équipe de vérification.'),
         Row(children: [Text("Vérification d'identité", style: t.titleMedium), const Spacer(), badgeKyc(u.kycStatut)]),
@@ -258,7 +258,7 @@ class EcranParametres extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Paramètres')),
+      appBar: AppBar(),
       body: Colonne(children: [
         const EnTetePage('Paramètres', 'Choisissez vos notifications, sécurisez votre compte et adaptez l\'affichage.'),
         Text('Notifications', style: t.titleMedium),
@@ -315,6 +315,7 @@ class EcranParametres extends ConsumerWidget {
                 Text('Taille du texte', style: t.titleSmall),
                 const SizedBox(height: ArzikiEspaces.s),
                 SegmentedButton<double>(
+                  showSelectedIcon: false,
                   segments: const [
                     ButtonSegment(value: 1.0, label: Text('Normal')),
                     ButtonSegment(value: 1.15, label: Text('Grand')),

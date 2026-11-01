@@ -92,9 +92,10 @@ class LogoArziki extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sombre = Theme.of(context).brightness == Brightness.dark;
     final fichier = symboleSeul
         ? 'assets/logo/arziki_symbole.png'
-        : blanc
+        : blanc || sombre
             ? 'assets/logo/arziki_logo_blanc.png'
             : 'assets/logo/arziki_logo.png';
     return Image.asset(fichier, height: hauteur, fit: BoxFit.contain, semanticLabel: 'ARZIKI');
@@ -413,7 +414,7 @@ class BadgeStatut extends StatelessWidget {
       decoration: BoxDecoration(color: fond, borderRadius: BorderRadius.circular(ArzikiRayons.badge)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         if (icone != null) ...[Icon(icone, size: 14, color: encre), const SizedBox(width: 4)],
-        Text(texte, style: TextStyle(color: encre, fontSize: 12.5, fontWeight: FontWeight.w700)),
+        Flexible(child: Text(texte, style: TextStyle(color: encre, fontSize: 12.5, fontWeight: FontWeight.w700))),
       ]),
     );
   }
@@ -821,3 +822,12 @@ const _mois = [
 
 /// Formate une date : 31 octobre 2026 (1er pour le premier jour du mois).
 String dateLongue(DateTime d) => '${d.day == 1 ? '1er' : d.day} ${_mois[d.month - 1]} ${d.year}';
+
+/// Formate un numéro : +22890000011 devient +228 90 00 00 11.
+String telephoneLisible(String? numero) {
+  if (numero == null || numero.isEmpty) return '';
+  final m = RegExp(r'^\+(\d{3})(\d{8})$').firstMatch(numero.replaceAll(' ', ''));
+  if (m == null) return numero;
+  final c = m.group(2)!;
+  return '+${m.group(1)} ${c.substring(0, 2)} ${c.substring(2, 4)} ${c.substring(4, 6)} ${c.substring(6, 8)}';
+}

@@ -109,7 +109,7 @@ const _pages = [
     Icons.gavel_rounded,
   ),
   _PagePresentation(
-    Images.servicesConseil,
+    Images.dirigeanteSignature,
     'Des experts pour vos dossiers',
     'Business plan, états financiers, formations : les équipes de NEXUS International vous accompagnent.',
     Icons.workspace_premium_rounded,
@@ -382,7 +382,7 @@ class _CarteProfil extends StatelessWidget {
               Row(children: [
                 Icon(p.icone, color: ArzikiCouleurs.vert, size: 20),
                 const SizedBox(width: 6),
-                Expanded(child: Text(p.titre, style: t.titleMedium, overflow: TextOverflow.ellipsis)),
+                Expanded(child: Text(p.titre, style: t.titleMedium, maxLines: 2)),
               ]),
               const SizedBox(height: 4),
               Text(p.texte, style: t.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),

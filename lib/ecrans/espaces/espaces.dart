@@ -105,7 +105,13 @@ class AccueilRole extends ConsumerWidget {
 DateTime echeance(Operation o) => o.dateLimite.add(Duration(days: o.dureeJours));
 
 String _prochaine(Iterable<Operation> ops) {
-  final dates = ops.where((o) => o.statut != StatutOperation.cloturee).map(echeance).toList()..sort();
+  final aujourdhui = DateTime.now();
+  final dates = ops
+      .where((o) => o.statut != StatutOperation.cloturee && o.statut != StatutOperation.enRetard)
+      .map(echeance)
+      .where((d) => d.isAfter(aujourdhui))
+      .toList()
+    ..sort();
   return dates.isEmpty ? 'Aucune' : dateLongue(dates.first);
 }
 
@@ -326,7 +332,7 @@ class _EspaceCercleState extends ConsumerState<EspaceCercle> {
         Onglet(
           icone: Icons.receipt_long_outlined,
           iconeActive: Icons.receipt_long_rounded,
-          libelle: 'Participations',
+          libelle: 'Mes parts',
           titre: 'Mes participations',
           page: _MesParticipations(participations: mesParts, etat: etat, onDecouvrir: () => cadre.currentState?.allerA(1)),
         ),
@@ -803,7 +809,7 @@ class _ActesNotaireState extends State<_ActesNotaire> {
       const TitreSection('Fonds reçus en séquestre'),
       CarteArziki(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('Réassort de médicaments génériques : 7 800 000 FCFA déclarés par 9 participants.'),
+          Text('Réassort de médicaments génériques : ${fcfa(7800000)} déclarés par 9 participants.'),
           const SizedBox(height: ArzikiEspaces.m),
           if (_fondsConfirmes)
             const Encadre('Réception confirmée. Les participants sont notifiés.', icone: Icons.check_circle_rounded)

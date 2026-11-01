@@ -574,7 +574,7 @@ class EcranNotifications extends ConsumerWidget {
     final liste = notificationsPour(u.role);
     final t = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(),
       body: Colonne(children: [
         const EnTetePage('Notifications', 'Les étapes de vos dossiers et les informations importantes.'),
         if (liste.isEmpty)

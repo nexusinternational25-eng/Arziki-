@@ -113,7 +113,8 @@ jobs:
 
       - name: APK Android
         run: |
-          flutter build apk --release \
+          # Téléphones Android (processeurs ARM 32 et 64 bits) : APK plus léger.
+          flutter build apk --release --target-platform android-arm,android-arm64 \
             --dart-define-from-file=config/firebase.json \
             --dart-define=APP_MODE=$MODE
 
@@ -131,6 +132,13 @@ jobs:
           mkdir -p site
           cp livraison/index.html livraison/vercel.json site/
           cp assets/logo/arziki_logo.png site/logo.png
+          cp assets/logo/arziki_logo_blanc.png site/logo_blanc.png
+          mkdir -p site/images
+          for i in ambiance_marche accueil_livraison_chantier services_conseil services_analyse \
+                   accueil_dirigeante_signature ambiance_equipe partenariat_reunion_investisseurs \
+                   cercle_diaspora partenariat_port; do
+            cp assets/images/$i.jpg site/images/
+          done
           cp build/app/outputs/flutter-apk/app-release.apk site/ARZIKI.apk
           cp -r build/site-app site/app
           cp -r build/site-console site/console

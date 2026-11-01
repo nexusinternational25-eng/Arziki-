@@ -118,7 +118,8 @@ class PageInfo extends ConsumerWidget {
     }
     final legale = page.version != null;
     return Scaffold(
-      appBar: barreArziki(context, titre: page.titre),
+      // Le titre est déjà sur la photo d'en-tête : la barre du haut reste sobre.
+      appBar: barreArziki(context, titre: page.image == null ? page.titre : null),
       bottomNavigationBar: const BarreVisiteur(),
       body: Colonne(children: [
         if (page.image != null)
@@ -422,7 +423,7 @@ class _EcranFaqState extends ConsumerState<EcranFaq> {
     }).toList();
 
     return Scaffold(
-      appBar: barreArziki(context, titre: 'Questions fréquentes'),
+      appBar: barreArziki(context),
       bottomNavigationBar: const BarreVisiteur(),
       body: Colonne(children: [
         const EnTetePage('Questions fréquentes', 'Les réponses aux questions les plus courantes, classées par sujet.'),

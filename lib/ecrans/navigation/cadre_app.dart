@@ -202,11 +202,19 @@ class BarreVisiteur extends ConsumerWidget {
           child: LargeurMax(
             child: Row(children: [
               Expanded(
-                child: OutlinedButton(onPressed: () => context.push(Chemins.connexion), child: const Text('Se connecter')),
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                  onPressed: () => context.push(Chemins.connexion),
+                  child: const Text('Se connecter', maxLines: 1),
+                ),
               ),
               const SizedBox(width: ArzikiEspaces.m - 4),
               Expanded(
-                child: FilledButton(onPressed: () => context.go(Chemins.choix), child: const Text('Créer mon compte')),
+                child: FilledButton(
+                  style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                  onPressed: () => context.go(Chemins.choix),
+                  child: const Text('Créer mon compte', maxLines: 1),
+                ),
               ),
             ]),
           ),
@@ -272,10 +280,10 @@ class CadreOngletsState extends State<CadreOnglets> {
     int versDestination(int index) => central && index >= milieu ? index + 1 : index;
     int versOnglet(int dest) => central && dest > milieu ? dest - 1 : dest;
 
-    final onglet = widget.onglets[_index];
     return Scaffold(
       drawer: const MenuLateral(),
-      appBar: barreArziki(context, titre: onglet.titre, logo: onglet.titre == null),
+      // Le titre de chaque onglet est dans la page : la barre du haut porte le logo.
+      appBar: barreArziki(context, logo: true),
       body: IndexedStack(index: _index, children: [for (final o in widget.onglets) o.page]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: versDestination(_index),
