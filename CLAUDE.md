@@ -492,6 +492,7 @@ Le propriétaire veut qu'ARZIKI sorte du mode démonstration et s'ouvre aux pays
 - Seul le Togo est `actif` au départ. Un pays ne passe à `actif` qu'après validation juridique locale et enregistrement d'un notaire partenaire dans ce pays (décision du super administrateur depuis la console, tracée dans l'audit).
 - Monnaie unique : FCFA (XOF), sans décimales, pour tous les pays de l'UEMOA.
 - Pas de drapeau du Togo (section 21) : par cohérence, aucun drapeau, on affiche le nom du pays.
+- **Fait (jalon A, 15 novembre 2026)** : `lib/core/pays.dart` est la seule source. Les Cloud Functions lisent `functions/src/pays.json`, produit par `dart run tool/exporter_pays.dart` (à relancer après toute modification ; `test/pays_test.dart` échoue si les deux diffèrent). Les pays « à venir » sont visibles à l'inscription avec la mention « bientôt », mais aucune vérification de numéro, inscription ni invitation n'y est possible, côté application comme côté serveur.
 
 ### 23.2 Inscription et données
 

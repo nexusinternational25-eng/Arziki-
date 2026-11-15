@@ -44,6 +44,7 @@ import {
   messageConfirme,
   signatureValide,
 } from "./whatsapp";
+import { erreurTelephone, paysDuTelephone } from "./pays";
 import { REGION } from "./region";
 
 initializeApp();
@@ -125,6 +126,10 @@ export const inscrire = onCall(
     // Numéro vérifié par SMS (Firebase) ou par WhatsApp (jeton créé par finaliserVerification).
     const telephone = (req.auth?.token.phone_number ?? req.auth?.token.telephone_verifie) as string | undefined;
     if (!telephone) throw new HttpsError("failed-precondition", "Numéro de téléphone non vérifié.");
+    // Section 23 : inscription seulement depuis un pays ouvert.
+    const refusPays = erreurTelephone(normaliserTelephone(telephone));
+    if (refusPays) throw new HttpsError("failed-precondition", refusPays);
+    const pays = paysDuTelephone(normaliserTelephone(telephone))!.code;
     const { parcours, codeInvitation, cgVersion } = req.data ?? {};
     texte(cgVersion, "version des conditions", 1, 40);
 
@@ -164,7 +169,7 @@ export const inscrire = onCall(
         statut: "en_attente",
         kycStatut: "non_commence",
         telephone: normaliserTelephone(telephone),
-        pays: "TG",
+        pays,
         nom: "",
         prenom: "",
         invitationCode: code,
@@ -208,6 +213,8 @@ export const creerInvitation = onCall(
     const acteur = administrateur(req);
     const pourNom = texte(req.data?.pourNom, "nom", 3, 120);
     const pourTelephone = normaliserTelephone(texte(req.data?.pourTelephone, "téléphone", 8, 20));
+    const refusPays = erreurTelephone(pourTelephone);
+    if (refusPays) throw new HttpsError("invalid-argument", refusPays);
     const niveau = req.data?.niveau;
     if (!estNiveau(niveau)) throw new HttpsError("invalid-argument", "Niveau invalide.");
     const jours = Number(req.data?.joursValidite ?? 30);
@@ -571,7 +578,8 @@ export const demarrerVerification = onCall(
   protegerVerification(async (req) => {
     const telephone = normaliserTelephone(texte(req.data?.telephone, "telephone", 8, 20));
     const canal = req.data?.canal === "code" ? "code" : "message";
-    if (!/^\+\d{8,15}$/.test(telephone)) throw new HttpsError("invalid-argument", "Numéro de téléphone invalide.");
+    const refusPays = erreurTelephone(telephone);
+    if (refusPays) throw new HttpsError("invalid-argument", refusPays);
     if (!WHATSAPP_NUMERO_ARZIKI.value() || !WHATSAPP_ID_NUMERO.value()) {
       throw new HttpsError("unavailable", "La vérification par WhatsApp n'est pas encore active. Utilisez le SMS.");
     }

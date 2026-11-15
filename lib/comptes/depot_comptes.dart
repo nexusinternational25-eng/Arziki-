@@ -8,6 +8,7 @@
 // En production, c'est le serveur qui vérifie les droits ; ici, la version
 // de démonstration applique exactement les mêmes règles.
 
+import '../core/pays.dart';
 import '../core/roles.dart';
 import '../models/acces.dart';
 import '../models/utilisateur.dart';
@@ -130,11 +131,17 @@ class ReglesAcces {
     }
   }
 
-  /// Format attendu : +228 suivi de 8 chiffres (ou autre indicatif UEMOA).
+  /// Format international. Sans indicatif, on suppose le pays par défaut (section 23).
+  /// Refuse un numéro mal formé ou d'un pays qui n'est pas encore ouvert.
+  static void exigerTelephoneAccepte(String telephone) {
+    final refus = PaysConfig.erreurTelephone(normaliserTelephone(telephone));
+    if (refus != null) throw ErreurAcces(refus);
+  }
+
   static String normaliserTelephone(String brut) {
     final chiffres = brut.replaceAll(RegExp(r'[^0-9+]'), '');
     if (chiffres.startsWith('+')) return chiffres;
     if (chiffres.startsWith('00')) return '+${chiffres.substring(2)}';
-    return '+228$chiffres';
+    return '${PaysConfig.parDefaut.indicatif}$chiffres';
   }
 }

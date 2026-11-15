@@ -91,3 +91,31 @@ describe("outils", () => {
     expect(statutApres("membre", "en_cours")).toBe("en_attente");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Pays de la sous-région (CLAUDE.md, section 23)
+// ---------------------------------------------------------------------------
+
+import { PAYS, PAYS_PAR_DEFAUT, erreurTelephone, paysDuTelephone } from "../src/pays";
+
+describe("pays", () => {
+  it("le Togo est le pays par défaut et le seul ouvert", () => {
+    expect(PAYS_PAR_DEFAUT.code).toBe("TG");
+    expect(PAYS.filter((p) => p.statut === "actif").map((p) => p.code)).toEqual(["TG"]);
+    expect(PAYS.map((p) => p.code)).toEqual(expect.arrayContaining(["TG", "BJ", "NE"]));
+  });
+  it("reconnaît le pays d'un numéro et contrôle sa longueur", () => {
+    expect(paysDuTelephone("+22790123456")?.code).toBe("NE");
+    expect(erreurTelephone("+22890123456")).toBeNull();
+    expect(erreurTelephone("+2289012345")).toMatch(/invalide/);
+    expect(erreurTelephone("+228901234567")).toMatch(/invalide/);
+    expect(erreurTelephone("+33612345678")).toMatch(/zone ARZIKI/);
+  });
+  it("refuse un pays à venir, sauf si on ne demande que la forme", () => {
+    expect(erreurTelephone("+22790123456")).toMatch(/pas encore ouvert/);
+    expect(erreurTelephone("+22790123456", false)).toBeNull();
+    // Bénin : 10 chiffres commençant par 01.
+    expect(erreurTelephone("+2290197123456", false)).toBeNull();
+    expect(erreurTelephone("+22997123456", false)).toMatch(/invalide/);
+  });
+});

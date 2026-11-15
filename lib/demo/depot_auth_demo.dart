@@ -6,6 +6,7 @@ import '../auth/acces_admin.dart';
 import '../auth/depot_auth.dart';
 import '../comptes/depot_comptes.dart';
 import '../config/app_config.dart';
+import '../core/pays.dart';
 import '../core/roles.dart';
 import '../models/utilisateur.dart';
 import 'base_demo.dart';
@@ -39,6 +40,9 @@ class DepotAuthDemo implements DepotAuth {
 
   /// Limite commune à tous les moyens de vérification : 5 demandes par heure.
   void _compterDemande(String t) {
+    // Section 23 : numéro bien formé, pays ouvert.
+    final refus = PaysConfig.erreurTelephone(t);
+    if (refus != null) throw ErreurAuth(refus);
     final ilYaUneHeure = base.maintenant().subtract(const Duration(hours: 1));
     final envois = (_envoisSms[t] ?? [])..removeWhere((d) => d.isBefore(ilYaUneHeure));
     if (envois.length >= maxSmsParHeure) {
@@ -132,6 +136,7 @@ class DepotAuthDemo implements DepotAuth {
       statut: StatutCompte.enAttente,
       kycStatut: StatutKyc.nonCommence,
       telephone: t,
+      pays: PaysConfig.depuisTelephone(t)?.code ?? PaysConfig.parDefaut.code,
       invitationCode: codeInvitation,
       cgVersionAcceptee: demande.cgVersion,
       cgAccepteeLe: base.maintenant(),

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../auth/session.dart';
 import '../../comptes/depot_comptes.dart';
+import '../../core/pays.dart';
 import '../../core/roles.dart';
 import '../../demo/depot_comptes_demo.dart';
 import '../../models/acces.dart';
@@ -515,7 +516,11 @@ class _PageInvitationsState extends ConsumerState<PageInvitations> with _Recharg
               TextField(
                 controller: tel,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Téléphone', hintText: '+228 90 00 00 00'),
+                decoration: InputDecoration(
+                  labelText: 'Téléphone',
+                  hintText: '${PaysConfig.parDefaut.indicatif} ${PaysConfig.parDefaut.exemple}',
+                  helperText: 'Pays ouverts : ${PaysConfig.actifs.map((p) => p.nom).join(', ')}',
+                ),
               ),
               const SizedBox(height: ArzikiEspaces.m),
               DropdownButtonFormField<NiveauCercle>(

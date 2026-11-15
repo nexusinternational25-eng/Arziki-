@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../comptes/depot_comptes.dart';
 import '../comptes/depot_comptes_firebase.dart';
 import '../config/region.dart';
+import '../core/pays.dart';
 import '../models/utilisateur.dart';
 import 'depot_auth.dart';
 
@@ -45,6 +46,14 @@ class DepotAuthFirebase implements DepotAuth {
         _ => 'Connexion impossible pour le moment.',
       });
 
+  /// Contrôle fait aussi par le serveur ; ici, il évite un aller-retour inutile.
+  String _numeroAccepte(String telephone) {
+    final numero = ReglesAcces.normaliserTelephone(telephone);
+    final refus = PaysConfig.erreurTelephone(numero);
+    if (refus != null) throw ErreurAuth(refus);
+    return numero;
+  }
+
   ErreurAuth _traduireFonction(FirebaseFunctionsException e) =>
       ErreurAuth(e.message ?? 'Vérification impossible pour le moment.');
 
@@ -52,7 +61,7 @@ class DepotAuthFirebase implements DepotAuth {
   Future<VerificationParMessage> demarrerVerificationParMessage(String telephone) async {
     try {
       final r = await _fonctions.httpsCallable('demarrerVerification').call<Map<String, dynamic>>({
-        'telephone': ReglesAcces.normaliserTelephone(telephone),
+        'telephone': _numeroAccepte(telephone),
         'canal': 'message',
       });
       _jetonWhatsapp = null;
@@ -84,7 +93,7 @@ class DepotAuthFirebase implements DepotAuth {
     if (canal == CanalCode.whatsapp) {
       try {
         final r = await _fonctions.httpsCallable('demarrerVerification').call<Map<String, dynamic>>({
-          'telephone': ReglesAcces.normaliserTelephone(telephone),
+          'telephone': _numeroAccepte(telephone),
           'canal': 'code',
         });
         _idCodeWhatsapp = r.data['id'] as String;
@@ -97,7 +106,7 @@ class DepotAuthFirebase implements DepotAuth {
   }
 
   Future<void> _envoyerSms(String telephone) async {
-    final numero = ReglesAcces.normaliserTelephone(telephone);
+    final numero = _numeroAccepte(telephone);
     try {
       if (kIsWeb) {
         _confirmationWeb = await _auth.signInWithPhoneNumber(numero);

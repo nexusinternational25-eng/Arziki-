@@ -5,6 +5,8 @@
 
 import { randomInt } from "crypto";
 
+import { PAYS_PAR_DEFAUT } from "./pays";
+
 export const ROLES = [
   "super_admin",
   "admin",
@@ -89,12 +91,12 @@ export function exigerDroitAttribution(acteur: Acteur, cibleUid: string, roleAct
   }
 }
 
-/** Format international : +228XXXXXXXX. */
+/** Format international. Sans indicatif, on suppose le pays par défaut (section 23). */
 export function normaliserTelephone(brut: string): string {
   const chiffres = (brut ?? "").replace(/[^0-9+]/g, "");
   if (chiffres.startsWith("+")) return chiffres;
   if (chiffres.startsWith("00")) return `+${chiffres.substring(2)}`;
-  return `+228${chiffres}`;
+  return `${PAYS_PAR_DEFAUT.indicatif}${chiffres}`;
 }
 
 /** Code lisible, sans caractères ambigus : ARZ-7KQM-3XWP. */

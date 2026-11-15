@@ -67,6 +67,7 @@ class DepotComptesDemo implements DepotComptes {
       throw const ErreurAcces('La durée de validité doit être comprise entre 1 et 90 jours.');
     }
     final telephone = ReglesAcces.normaliserTelephone(pourTelephone);
+    ReglesAcces.exigerTelephoneAccepte(telephone);
     if (telephone.length < 10) throw const ErreurAcces('Numéro de téléphone invalide.');
     if (base.parTelephone(telephone) != null) {
       throw const ErreurAcces('Ce numéro a déjà un compte ARZIKI.');

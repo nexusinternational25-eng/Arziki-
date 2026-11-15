@@ -10,72 +10,74 @@ import '../../auth/depot_auth.dart';
 import '../../auth/session.dart';
 import '../../comptes/depot_comptes.dart';
 import '../../config/app_config.dart';
+import '../../core/pays.dart';
 import '../../core/textes_legaux.dart';
 import '../../router/garde_roles.dart';
 import '../../theme/arziki_theme.dart';
 import '../../ui/composants.dart';
 import 'verification_numero.dart';
 
-/// Indicatifs des pays de l'UEMOA (Togo par défaut).
-const indicatifsUemoa = {
-  '+228': 'Togo',
-  '+229': 'Bénin',
-  '+226': 'Burkina Faso',
-  '+225': "Côte d'Ivoire",
-  '+245': 'Guinée-Bissau',
-  '+223': 'Mali',
-  '+227': 'Niger',
-  '+221': 'Sénégal',
-};
-
-/// Champ de numéro de téléphone avec choix de l'indicatif.
+/// Champ de numéro de téléphone avec choix du pays (CLAUDE.md, section 23).
+/// Les pays « à venir » sont visibles, mais on ne peut pas encore s'y inscrire.
 class ChampTelephone extends StatelessWidget {
   const ChampTelephone({
     super.key,
-    required this.indicatif,
-    required this.onIndicatif,
+    required this.pays,
+    required this.onPays,
     required this.controleur,
     this.actif = true,
     this.onChanged,
   });
 
   final ValueChanged<String>? onChanged;
-  final String indicatif;
-  final ValueChanged<String> onIndicatif;
+  final Pays pays;
+  final ValueChanged<Pays> onPays;
   final TextEditingController controleur;
   final bool actif;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 118,
-          child: DropdownButtonFormField<String>(
-            initialValue: indicatif,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Pays'),
-            items: [
-              for (final e in indicatifsUemoa.entries)
-                DropdownMenuItem(value: e.key, child: Text(e.key, semanticsLabel: e.value)),
-            ],
-            onChanged: actif ? (v) => onIndicatif(v!) : null,
-          ),
+    final saisie = controleur.text;
+    // L'erreur de format n'apparaît qu'une fois le numéro entièrement saisi ou trop long.
+    final erreur = saisie.length >= pays.longueurNumero ? pays.erreurNumero(saisie) : null;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      DropdownButtonFormField<Pays>(
+        initialValue: pays,
+        isExpanded: true,
+        decoration: const InputDecoration(labelText: 'Pays'),
+        items: [
+          for (final p in PaysConfig.tous) DropdownMenuItem(value: p, child: Text(p.libelleChoix)),
+        ],
+        onChanged: actif ? (v) => onPays(v!) : null,
+      ),
+      const SizedBox(height: ArzikiEspaces.m),
+      TextField(
+        controller: controleur,
+        enabled: actif && pays.estActif,
+        onChanged: onChanged,
+        keyboardType: TextInputType.phone,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(pays.longueurNumero),
+        ],
+        decoration: InputDecoration(
+          labelText: 'Numéro de téléphone',
+          prefixText: '${pays.indicatif} ',
+          hintText: pays.exemple,
+          helperText: '${pays.longueurNumero} chiffres, sans l\'indicatif',
+          errorText: actif ? erreur : null,
+          errorMaxLines: 2,
         ),
-        const SizedBox(width: ArzikiEspaces.s),
-        Expanded(
-          child: TextField(
-            controller: controleur,
-            enabled: actif,
-            onChanged: onChanged,
-            keyboardType: TextInputType.phone,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-            decoration: const InputDecoration(labelText: 'Numéro de téléphone', hintText: '90 00 00 00'),
-          ),
+      ),
+      if (!pays.estActif) ...[
+        const SizedBox(height: ArzikiEspaces.s),
+        Encadre(
+          "ARZIKI n'est pas encore ouvert ${pays.dans}. L'ouverture se fera dès qu'un notaire partenaire "
+          'y sera enregistré. En attendant, vous pouvez découvrir ARZIKI sans compte.',
+          icone: Icons.schedule_rounded,
         ),
       ],
-    );
+    ]);
   }
 }
 
@@ -126,7 +128,7 @@ class EcranInvitation extends ConsumerStatefulWidget {
 class _EcranInvitationState extends ConsumerState<EcranInvitation> {
   final _code = TextEditingController();
   final _tel = TextEditingController();
-  String _indicatif = '+228';
+  Pays _pays = PaysConfig.parDefaut;
   String? _erreur;
   bool _enCours = false;
 
@@ -135,7 +137,7 @@ class _EcranInvitationState extends ConsumerState<EcranInvitation> {
       _enCours = true;
       _erreur = null;
     });
-    final telephone = '$_indicatif${_tel.text}';
+    final telephone = _pays.numeroInternational(_tel.text);
     try {
       final inv = await ref.read(depotComptesProvider).verifierInvitation(code: _code.text, telephone: telephone);
       if (!mounted) return;
@@ -164,6 +166,7 @@ class _EcranInvitationState extends ConsumerState<EcranInvitation> {
         const SizedBox(height: ArzikiEspaces.l),
         TextField(
           controller: _code,
+          onChanged: (_) => setState(() {}),
           textCapitalization: TextCapitalization.characters,
           decoration: InputDecoration(
             labelText: "Code d'invitation",
@@ -174,16 +177,23 @@ class _EcranInvitationState extends ConsumerState<EcranInvitation> {
         ),
         const SizedBox(height: ArzikiEspaces.m),
         ChampTelephone(
-          indicatif: _indicatif,
-          onIndicatif: (v) => setState(() => _indicatif = v),
+          pays: _pays,
+          onPays: (v) => setState(() {
+            _pays = v;
+            _tel.clear();
+          }),
           controleur: _tel,
+          onChanged: (_) => setState(() {}),
         ),
         if (_erreur != null) ...[
           const SizedBox(height: ArzikiEspaces.m),
           Encadre(_erreur!, type: TypeEncadre.erreur),
         ],
         const SizedBox(height: ArzikiEspaces.l),
-        FilledButton(onPressed: _enCours ? null : _verifier, child: const Text('Vérifier mon code')),
+        FilledButton(
+          onPressed: _enCours || !_pays.estActif || !_pays.numeroValide(_tel.text) || _code.text.trim().isEmpty ? null : _verifier,
+          child: const Text('Vérifier mon code'),
+        ),
       ]),
     );
   }
@@ -207,7 +217,7 @@ class EcranInscription extends ConsumerStatefulWidget {
 
 class _EcranInscriptionState extends ConsumerState<EcranInscription> {
   final _tel = TextEditingController();
-  String _indicatif = '+228';
+  Pays _pays = PaysConfig.parDefaut;
   bool _cgAcceptees = false; // jamais pré-cochée
   bool _verrouille = false; // numéro en cours de vérification
   // Clé fixe : la vérification garde son état quand l'écran change autour d'elle.
@@ -220,13 +230,12 @@ class _EcranInscriptionState extends ConsumerState<EcranInscription> {
     super.initState();
     final t = widget.telephone;
     if (t != null) {
-      final ind = indicatifsUemoa.keys.firstWhere((k) => t.startsWith(k), orElse: () => '+228');
-      _indicatif = ind;
-      _tel.text = t.substring(ind.length);
+      _pays = PaysConfig.depuisTelephone(t) ?? PaysConfig.parDefaut;
+      _tel.text = t.substring(_pays.indicatif.length);
     }
   }
 
-  String get _telephone => '$_indicatif${_tel.text}';
+  String get _telephone => _pays.numeroInternational(_tel.text);
 
   Future<void> _inscrire(PreuveTelephone preuve) async {
     final u = await ref.read(depotAuthProvider).inscrireParTelephone(
@@ -255,8 +264,11 @@ class _EcranInscriptionState extends ConsumerState<EcranInscription> {
         if (p == Parcours.candidature) const Encadre(TextesLegaux.cerclePrive, type: TypeEncadre.alerte),
         const SizedBox(height: ArzikiEspaces.l),
         ChampTelephone(
-          indicatif: _indicatif,
-          onIndicatif: (v) => setState(() => _indicatif = v),
+          pays: _pays,
+          onPays: (v) => setState(() {
+            _pays = v;
+            _tel.clear();
+          }),
           controleur: _tel,
           actif: !_verrouille && !_telephoneImpose,
           onChanged: (_) => setState(() {}),
@@ -276,7 +288,7 @@ class _EcranInscriptionState extends ConsumerState<EcranInscription> {
         VerificationNumero(
           key: _cleVerification,
           telephone: () => _telephone,
-          actif: _cgAcceptees && _tel.text.length >= 8,
+          actif: _cgAcceptees && _pays.estActif && _pays.numeroValide(_tel.text),
           onVerrouillage: (v) => setState(() => _verrouille = v),
           onPreuve: _inscrire,
           libelleValider: 'Créer mon compte',
@@ -299,11 +311,11 @@ class EcranConnexion extends ConsumerStatefulWidget {
 
 class _EcranConnexionState extends ConsumerState<EcranConnexion> {
   final _tel = TextEditingController();
-  String _indicatif = '+228';
+  Pays _pays = PaysConfig.parDefaut;
   bool _verrouille = false;
   final _cleVerification = GlobalKey();
 
-  String get _telephone => '$_indicatif${_tel.text}';
+  String get _telephone => _pays.numeroInternational(_tel.text);
 
   Future<void> _connecter(PreuveTelephone preuve) async {
     final u = await ref.read(depotAuthProvider).connecterParTelephone(_telephone, preuve);
@@ -324,8 +336,11 @@ class _EcranConnexionState extends ConsumerState<EcranConnexion> {
         const Text('Nous vérifions votre numéro par WhatsApp. Le SMS reste possible en secours.'),
         const SizedBox(height: ArzikiEspaces.l),
         ChampTelephone(
-          indicatif: _indicatif,
-          onIndicatif: (v) => setState(() => _indicatif = v),
+          pays: _pays,
+          onPays: (v) => setState(() {
+            _pays = v;
+            _tel.clear();
+          }),
           controleur: _tel,
           actif: !_verrouille,
           onChanged: (_) => setState(() {}),
@@ -341,7 +356,7 @@ class _EcranConnexionState extends ConsumerState<EcranConnexion> {
         VerificationNumero(
           key: _cleVerification,
           telephone: () => _telephone,
-          actif: _tel.text.length >= 8,
+          actif: _pays.estActif && _pays.numeroValide(_tel.text),
           onVerrouillage: (v) => setState(() => _verrouille = v),
           onPreuve: _connecter,
           libelleValider: 'Me connecter',
