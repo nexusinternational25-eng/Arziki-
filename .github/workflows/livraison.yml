@@ -136,7 +136,8 @@ jobs:
           mkdir -p site/images
           for i in ambiance_marche accueil_livraison_chantier services_conseil services_analyse \
                    accueil_dirigeante_signature ambiance_equipe partenariat_reunion_investisseurs \
-                   cercle_diaspora partenariat_port; do
+                   cercle_diaspora partenariat_port operation_btp operation_cereales \
+                   operation_pharmacie operation_flotte_logistique; do
             cp assets/images/$i.jpg site/images/
           done
           cp build/app/outputs/flutter-apk/app-release.apk site/ARZIKI.apk

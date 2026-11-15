@@ -481,3 +481,38 @@ Le propriétaire n'est pas développeur. Claude Code travaille comme un chef de 
 - Réglages (jamais dans Git) : secrets Firebase `WHATSAPP_JETON`, `WHATSAPP_SECRET_APP`, `WHATSAPP_JETON_WEBHOOK` ; paramètres `WHATSAPP_ID_NUMERO`, `WHATSAPP_NUMERO_ARZIKI`. Tant qu'ils ne sont pas remplis, l'application propose le SMS.
 - À fournir par le propriétaire : une puce dédiée à ARZIKI (non utilisée dans l'application WhatsApp ordinaire) et la vérification de NEXUS International chez Meta (guide : `docs/mise_en_service.md`).
 - Administrateurs : jamais de WhatsApp ni de SMS, seulement e-mail, mot de passe et double facteur.
+
+## 23. Extension sous-régionale et passage en production (décision du propriétaire, 15 novembre 2026)
+
+Le propriétaire veut qu'ARZIKI sorte du mode démonstration et s'ouvre aux pays de la sous-région (Togo, Bénin, Niger, puis Côte d'Ivoire, Burkina Faso, Sénégal, Mali). Les règles légales de la section 1 restent inchangées : l'application n'encaisse que les frais de service, jamais les fonds des opérations.
+
+### 23.1 Configuration des pays (un seul fichier)
+
+- Créer `lib/core/pays.dart` : liste unique des pays avec code ISO, nom, indicatif, longueur du numéro national, portefeuilles mobiles proposés, autorité de protection des données, notaire partenaire renseigné ou non, statut `actif` ou `a_venir`.
+- Seul le Togo est `actif` au départ. Un pays ne passe à `actif` qu'après validation juridique locale et enregistrement d'un notaire partenaire dans ce pays (décision du super administrateur depuis la console, tracée dans l'audit).
+- Monnaie unique : FCFA (XOF), sans décimales, pour tous les pays de l'UEMOA.
+- Pas de drapeau du Togo (section 21) : par cohérence, aucun drapeau, on affiche le nom du pays.
+
+### 23.2 Inscription et données
+
+- Sélecteur de pays à l'inscription, Togo par défaut. Validation du numéro selon le pays (indicatif et longueur). Remplacer le `+228` écrit en dur dans `lib/comptes/depot_comptes.dart` par la configuration.
+- Champ `pays` obligatoire sur `utilisateurs`, `entreprises`, `operations`, `notaires` et `fournisseurs`. Les opérations existantes reçoivent `TG`.
+- Console : filtre par pays sur toutes les listes, tableau de bord par pays.
+- Une opération n'est publiable que si un notaire actif existe dans le pays de l'opération. Le Cercle reste unique, mais le plafond de 100 personnes s'applique à l'ensemble (à confirmer par l'avocat).
+
+### 23.3 Paiement : plusieurs agrégateurs possibles
+
+- Conserver l'interface `PaymentProvider` et ajouter le choix de l'agrégateur par pays dans la configuration (CinetPay, PayDunya, FedaPay, PayGate Global pour le Togo). Aucun agrégateur n'est écrit en dur.
+- Le choix final dépend d'offres écrites et de l'agrément BCEAO de l'agrégateur. La couverture du Niger est souvent partielle : prévoir le repli « virement, preuve à déposer » pour les frais de service.
+- Ne pas dépendre d'un seul agrégateur : CinetPay a subi des incidents de fraude en septembre 2025 d'après la presse spécialisée.
+- Règle inchangée : un paiement n'est « accepté » que par le webhook serveur, signature et statut vérifiés.
+- Fonds des opérations : afficher les coordonnées du compte du notaire et la mention « virement bancaire ou paiement instantané PI-SPI » ; l'investisseur dépose sa preuve de versement.
+
+### 23.4 Passage en production
+
+- Suivre `docs/mise_en_service.md` et `docs/passage_en_production.md`. Le mode démonstration reste disponible par configuration, pour les présentations.
+- Critères d'acceptation : (1) un compte réel créé au Togo et un au Niger avec leurs indicatifs ; (2) une opération réelle saisie de bout en bout avec un notaire actif ; (3) un paiement de frais accepté par webhook et un refusé ; (4) `flutter analyze`, `flutter test`, tests des Cloud Functions et des règles au vert ; (5) aucun pays `a_venir` ne permet de publier une opération.
+
+### 23.5 Vitrine
+
+- La page d'accueil (`livraison/index.html`) a été refaite le 15 novembre 2026 : simulateur de marge, critères d'éligibilité, pièces à préparer, exemples par secteur, pays et moyens de paiement. Les portefeuilles y sont présentés comme « prévus » tant qu'ils ne sont pas branchés.
