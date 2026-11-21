@@ -144,6 +144,9 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk site/ARZIKI.apk
           cp -r build/site-app site/app
           cp -r build/site-console site/console
+          # Aperçu du site amanexus.com (hors index Google, voir vercel.json)
+          cp -r deploiement-lws site/amanexus
+          rm -f site/amanexus/contact.php site/amanexus/.htaccess
           # Fichiers inutiles en ligne (symboles de débogage)
           find site -name '*.symbols' -delete
           # Adresse relative : le site marche à la racine (Vercel) comme dans un
