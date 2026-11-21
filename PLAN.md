@@ -69,7 +69,7 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 
 - [x] CGU Entreprises, CGU Partenaires financiers, confidentialité, mentions légales (version 2.0, à faire relire par l'avocat)
 - [x] Avertissement R8 dans l'application et sur le site Vercel
-- [ ] Avertissement R8 sur arziki.html
+- [x] Avertissement R8 sur arziki.html
 - [ ] Projets de contrats PDF avec filigrane « PROJET À VALIDER PAR LE NOTAIRE »
 
 ## 6. Site amanexus.com
