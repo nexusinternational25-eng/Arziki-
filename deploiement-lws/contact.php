@@ -65,6 +65,7 @@ $telephone = champ('telephone', 40);
 $entreprise = champ('entreprise', 160);
 $pays = champ('pays', 60);
 $besoin = champ('besoin', 120);
+$dates = champ('dates', 80);
 $message = champ('message', 5000);
 $formulaire = champ('formulaire', 60);
 $langue = champ('langue', 5);
@@ -90,7 +91,8 @@ $corps = "Nouveau message depuis le site amanexus.com\n\n"
     . "Téléphone : $telephone\n"
     . "Entreprise : $entreprise\n"
     . "Pays : $pays\n"
-    . "Besoin : $besoin\n\n"
+    . "Besoin : $besoin\n"
+    . "Dates prévues : $dates\n\n"
     . "Message :\n$message\n";
 
 $entetes = [

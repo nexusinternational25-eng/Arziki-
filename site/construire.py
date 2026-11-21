@@ -29,6 +29,13 @@ SOURCE = RACINE / "site"
 SORTIE = RACINE / "deploiement-lws"
 DOMAINE = "https://www.amanexus.com"
 APP = "arziki/app/"  # application web ARZIKI (chemin configurable)
+# Tant que l'application web n'est pas construite dans deploiement-lws/arziki/app/
+# (étape 7), les boutons mènent vers la démonstration en ligne.
+APP_EN_LIGNE = "https://arziki-rosy.vercel.app/app/"
+
+
+def adresse_app(p):
+    return p + APP if (SORTIE / APP / "index.html").exists() else APP_EN_LIGNE
 
 EMAIL = "nexusinternational25@gmail.com"
 EMAIL_COPIE = "operation@amanexus.com"
@@ -327,7 +334,7 @@ def pied(lang, id_):
   </footer>"""
 
 
-def formulaire(lang, nom_formulaire, besoins=None, pays=None, entreprise=True):
+def formulaire(lang, nom_formulaire, besoins=None, pays=None, entreprise=True, dates=False):
     """Formulaire commun : vers contact.php, champ piège et horodatage anti-robot."""
     p = prefixe(lang)
     page = chemin(nom_formulaire[0], lang) or "index.html"
@@ -364,7 +371,7 @@ def formulaire(lang, nom_formulaire, besoins=None, pays=None, entreprise=True):
       <div class="duo">
         <label>E-mail<input type="email" name="email" maxlength="160" autocomplete="email"></label>
         <label>{T(lang, "Téléphone ou WhatsApp", "Phone or WhatsApp", "الهاتف أو واتساب")}<input type="tel" name="telephone" maxlength="40" autocomplete="tel" placeholder="+228"></label>
-      </div>{options_besoin}{options_pays}
+      </div>{options_besoin}{options_pays}{('<label>' + T(lang, "Dates prévues", "Planned dates") + '<input name="dates" maxlength="80"></label>') if dates else ''}
       <label>{T(lang, "Votre message", "Your message", "رسالتكم")}<textarea name="message" required minlength="10" maxlength="5000" rows="5"></textarea></label>
       <label class="case"><input type="checkbox" name="consentement" value="oui" required> <span>{T(lang, "J'accepte que NEXUS International utilise ces informations pour répondre à ma demande, selon la politique de confidentialité.", "I agree that NEXUS International may use this information to reply to my request, in line with the privacy policy.", "أوافق على أن تستخدم نيكسوس إنترناشونال هذه المعلومات للرد على طلبي، وفق سياسة الخصوصية.")}</span></label>
       <p class="discret">{T(lang, "Indiquez au moins un e-mail ou un numéro de téléphone.", "Please give at least an e-mail address or a phone number.", "يرجى ذكر بريد إلكتروني أو رقم هاتف على الأقل.")}</p>
@@ -691,46 +698,101 @@ def page_formations(lang):
 
 
 def page_services(lang):
+    """Business Services : contenu du fichier services.html fourni par le propriétaire,
+    intégré au design commun."""
     p = prefixe(lang)
     offres = [
-        ("reunion", T(lang, "Accueil de délégations d'affaires à Lomé", "Hosting business delegations in Lomé"),
-         T(lang, "Programme de rendez-vous, visites d'entreprises et du port, accueil, transport et logistique de votre séjour.", "Meeting schedule, company and port visits, reception, transport and logistics for your stay.")),
-        ("camions", T(lang, "Achat pour compte et expédition Lomé-Niamey", "Purchasing on your behalf and shipping Lomé to Niamey"),
-         T(lang, "Nous achetons pour vous à Lomé, contrôlons la marchandise et organisons l'expédition jusqu'à Niamey.", "We buy for you in Lomé, check the goods and organise shipping to Niamey.")),
-        ("signature", T(lang, "Représentation de marques étrangères", "Representation of foreign brands"),
-         T(lang, "Nous représentons votre marque au Togo et dans la sous-région : prospection, distributeurs, suivi commercial.", "We represent your brand in Togo and the region: prospecting, distributors, sales follow-up.")),
-        ("marche", T(lang, "Produits du Sahel", "Sahel products"),
-         T(lang, "Mise en relation avec des producteurs et exportateurs de produits du Sahel, contrôle et acheminement.", "Connecting you with producers and exporters of Sahel products, quality control and transport.")),
+        ("reunion", T(lang, "Accueil des délégations", "Business delegation support"),
+         T(lang, "Accueil à l'aéroport, hôtel à tarif négocié, chauffeur, interprète, programme de rendez-vous et visites de sites.", "Airport welcome, hotel at negotiated rates, driver, interpreter, meeting schedule and site visits."), T(lang, "Service phare", "Flagship")),
+        ("camions", T(lang, "Achat pour compte Lomé-Niamey", "Sourcing and shipping Lomé-Niamey"),
+         T(lang, "Nous achetons, contrôlons et expédions vos marchandises depuis Lomé vers le Niger et le Sahel, avec photos à chaque étape.", "We buy, inspect and ship your goods from Lomé to Niger and the Sahel, with photos at every step."), ""),
+        ("signature", T(lang, "Représentation de marques", "Brand representation"),
+         T(lang, "Producteurs étrangers : nous plaçons vos produits auprès des distributeurs au Togo et au Niger, sans que vous ouvriez de bureau.", "Foreign producers: we place your products with distributors in Togo and Niger, without you opening an office."), ""),
+        ("marche", T(lang, "Produits du Sahel", "Sahel produce"),
+         T(lang, "Oignon, souchet, sésame, gomme arabique : nous mettons en relation coopératives du Niger et acheteurs de la côte.", "Onion, tiger nuts, sesame, gum arabic: we connect Niger cooperatives with coastal buyers."), ""),
     ]
-    cartes = "\n".join(f"""          <article class="carte">{img(p, im, t)}<div class="c"><h3>{e(t)}</h3><p>{e(d)}</p></div></article>""" for im, t, d in offres)
-    jsonld = [{"@type": "Service", "name": t, "description": d, "provider": {"@id": f"{DOMAINE}/#organisation"}, "areaServed": ["Togo", "Niger"]} for _, t, d, in offres]
-    corps = hero(p, "port", "Business Services",
-                 T(lang, "Vos affaires à Lomé, et jusqu'à Niamey", "Your business in Lomé, and all the way to Niamey"),
-                 T(lang, "Un partenaire sur place pour accueillir vos délégations, acheter et expédier pour vous, représenter votre marque et trouver les produits du Sahel.", "A local partner to host your delegations, buy and ship for you, represent your brand and source Sahel products."),
-                 f'<a class="bouton" href="#formulaire">{T(lang, "Demander une offre", "Request an offer")}</a>',
+    cartes = "\n".join(
+        f"""          <article class="carte">{img(p, im, t)}<div class="c">{('<span class="etiquette o">' + e(badge) + '</span>') if badge else ''}<h3>{e(t)}</h3><p>{e(d)}</p></div></article>"""
+        for im, t, d, badge in offres
+    )
+    formules = [
+        (T(lang, "Essentiel", "Essential"), T(lang, "1 journée", "1 day"), T(lang, "À partir de 75 000 FCFA par jour", "From 75,000 FCFA per day"),
+         [T(lang, "Accueil à l'aéroport", "Airport welcome"), T(lang, "Transfert à l'hôtel", "Hotel transfer"), T(lang, "Chauffeur et véhicule", "Driver and vehicle"), T(lang, "Assistance téléphonique", "Phone assistance"), T(lang, "Puce téléphone locale", "Local SIM card")], ""),
+        (T(lang, "Affaires", "Business"), T(lang, "Séjour de 3 jours", "3-day stay"), T(lang, "À partir de 300 000 FCFA", "From 300,000 FCFA"),
+         [T(lang, "Tout l'Essentiel", "Everything in Essential"), T(lang, "Réservation de l'hôtel", "Hotel booking"), T(lang, "Programme des visites", "Visit schedule"), T(lang, "Interprète si besoin", "Interpreter if needed"), T(lang, "2 à 4 rendez-vous organisés", "2 to 4 arranged meetings"), T(lang, "Dîner d'affaires", "Business dinner")], "o"),
+        ("Mission", T(lang, "Sur mesure", "Tailor-made"), T(lang, "Sur devis", "On quotation"),
+         [T(lang, "Tout Affaires", "Everything in Business"), T(lang, "Rendez-vous ciblés et préparés", "Targeted, prepared meetings"), T(lang, "Lettre d'invitation et visa", "Invitation letter and visa"), T(lang, "Visites du port et des sites", "Port and site visits"), T(lang, "Note de synthèse après mission", "Post-mission report"), T(lang, "Suivi des contacts", "Contact follow-up")], "j"),
+    ]
+    cartes_formules = "\n".join(
+        f"""          <article class="carte famille {c}"><div class="c"><span class="etiquette{(' ' + c) if c else ''}">{e(n)}</span><h3>{e(duree)}</h3><p><b>{e(prix)}</b></p><ul>{''.join(f'<li>{e(x)}</li>' for x in items)}</ul></div></article>"""
+        for n, duree, prix, items, c in formules
+    )
+    jsonld = [{"@type": "Service", "name": t, "description": d, "provider": {"@id": f"{DOMAINE}/#organisation"}, "areaServed": ["Togo", "Niger"]} for _, t, d, _ in offres]
+    jsonld.append({"@type": "OfferCatalog", "name": T(lang, "Formules d'accueil des délégations", "Delegation packages"),
+                   "itemListElement": [{"@type": "Offer", "name": n, "description": prix, "priceCurrency": "XOF"} for n, _, prix, _, _ in formules]})
+    corps = hero(p, "port", T(lang, "Lomé, porte d'entrée de l'Afrique de l'Ouest", "Lomé, gateway to West Africa"),
+                 T(lang, "Votre partenaire d'affaires sur place à Lomé", "Your on-the-ground business partner in Lomé"),
+                 T(lang, "Vous venez au Togo pour le port, une usine, des fournisseurs ou un investissement ? Nous organisons tout : accueil, hôtel, transport, interprète et rendez-vous ciblés. Vous vous concentrez sur vos affaires.",
+                   "Coming to Togo for the port, a factory, suppliers or an investment? We handle everything: airport pickup, hotel, transport, interpreter and targeted meetings. You focus on business."),
+                 f'<a class="bouton" href="https://wa.me/{WA}" rel="noopener">{T(lang, "Écrire sur WhatsApp", "Message us on WhatsApp")}</a><a class="bouton clair" href="#formules">{T(lang, "Voir nos formules", "See our packages")}</a>',
                  fil=fil_ariane(lang, "Business Services")) + f"""
     <section>
       <div class="in">
-        <h2>{T(lang, "Quatre services", "Four services")}</h2>
+        <span class="sur">Business Services</span>
+        <h2>{T(lang, "Nos services", "Our services")}</h2>
+        <p class="intro">{T(lang, "Un seul interlocuteur pour vos missions, vos achats et vos échanges commerciaux entre la côte et le Sahel.", "One single point of contact for your business trips, purchases and trade between the coast and the Sahel.")}</p>
         <div class="grille">
 {cartes}
+        </div>
+      </div>
+    </section>
+    <section class="doux" id="formules">
+      <div class="in">
+        <h2>{T(lang, "Formules d'accueil des délégations", "Delegation packages")}</h2>
+        <p class="intro">{T(lang, "Des formules claires, adaptables à votre programme.", "Clear packages, tailored to your schedule.")}</p>
+        <div class="grille">
+{cartes_formules}
+        </div>
+        <p class="discret" style="margin-top:18px">{T(lang, "Hébergement facturé en plus, aux tarifs négociés avec nos hôtels partenaires.", "Accommodation billed separately, at rates negotiated with our partner hotels.")}</p>
+      </div>
+    </section>
+    <section>
+      <div class="in deux">
+        <div>
+          <h2>{T(lang, "Comment ça marche", "How it works")}</h2>
+          <p class="intro">{T(lang, "Quatre étapes simples, de votre demande à votre retour.", "Four simple steps, from your request to your return.")}</p>
+          <ol class="etapes">
+            <li><b>{T(lang, "Votre demande", "Your request")}</b> : {T(lang, "dates, objet du voyage, besoins : un message suffit.", "dates, purpose, needs: one message is enough.")}</li>
+            <li><b>{T(lang, "Programme et devis", "Plan and quote")}</b> : {T(lang, "nous vous envoyons un programme et un devis sous 48 heures.", "we send you a schedule and a quote within 48 hours.")}</li>
+            <li><b>{T(lang, "Votre séjour", "Your stay")}</b> : {T(lang, "nous vous accompagnons du premier au dernier jour.", "we are with you from the first to the last day.")}</li>
+            <li><b>{T(lang, "Le suivi", "Follow-up")}</b> : {T(lang, "nous assurons la suite de vos contacts après votre départ.", "we follow up on your contacts after you leave.")}</li>
+          </ol>
+        </div>
+        <div>
+          <h2>{T(lang, "Pourquoi nous ?", "Why us?")}</h2>
+          <p class="intro">{T(lang, "Un cabinet d'affaires installé à Lomé, actif dans toute l'Afrique de l'Ouest.", "A business firm based in Lomé, active across West Africa.")}</p>
+          <ul class="liste">
+            <li><b>{T(lang, "Ancrés à Lomé et au Niger", "Rooted in Lomé and Niger")}</b> : {T(lang, "un pied sur la côte, un pied au Sahel, nous connaissons le corridor.", "one foot on the coast, one in the Sahel, we know the corridor.")}</li>
+            <li><b>{T(lang, "Un réseau d'affaires réel", "A real business network")}</b> : {T(lang, "banques, industriels, transitaires, administrations, partenaires de confiance.", "banks, manufacturers, freight agents, public bodies and trusted partners.")}</li>
+            <li><b>{T(lang, "Bilingue", "Bilingual")}</b> : {T(lang, "français et anglais, interprètes pour les autres langues.", "French and English, interpreters for other languages.")}</li>
+          </ul>
         </div>
       </div>
     </section>
     <section class="doux">
       <div class="in deux">
         <div>
-          <h2>{T(lang, "Votre demande", "Your request")}</h2>
-          <p class="intro">{T(lang, "Décrivez votre besoin : produits, quantités, dates, ville d'arrivée. Nous revenons vers vous avec une offre écrite.", "Describe your need: products, quantities, dates, destination city. We will reply with a written offer.")}</p>
+          <h2>{T(lang, "Vous préparez un voyage à Lomé ?", "Planning a trip to Lomé?")}</h2>
+          <p class="intro">{T(lang, "Dites-nous vos dates et ce que vous venez faire. Nous revenons vers vous rapidement avec un programme.", "Tell us your dates and the purpose of your visit. We will quickly get back to you with a plan.")}</p>
           <p>{T(lang, "Besoin de financer une commande ?", "Need to fund an order?")} <a href="{lien(lang, 'arziki')}">{T(lang, "Découvrez ARZIKI", "Discover ARZIKI")}</a>.</p>
         </div>
-{formulaire(lang, ('services', 'Business Services'), besoins=[t for _, t, _ in offres] + [T(lang, 'Autre', 'Other')])}
+{formulaire(lang, ('services', 'Business Services'), besoins=[t for _, t, _, _ in offres] + [T(lang, 'Autre', 'Other')], dates=True)}
       </div>
     </section>"""
     return (
-        T(lang, "Business Services : délégations à Lomé, expédition Lomé-Niamey", "Business Services: delegations in Lomé, Lomé-Niamey shipping"),
-        T(lang, "Accueil de délégations d'affaires à Lomé, achat pour compte et expédition Lomé-Niamey, représentation de marques étrangères, produits du Sahel.",
-          "Hosting business delegations in Lomé, purchasing on your behalf and Lomé-Niamey shipping, foreign brand representation, Sahel products."),
+        T(lang, "Business Services | Accueil d'affaires à Lomé, Lomé-Niamey", "Business Services | Business support in Lomé, Lomé-Niamey"),
+        T(lang, "NEXUS International vous accueille à Lomé : délégations d'affaires, rendez-vous, hôtel, chauffeur, interprète, achat pour compte et expédition vers le Niger, produits du Sahel.",
+          "NEXUS International welcomes you in Lomé: business delegations, meetings, hotel, driver, interpreter, sourcing and shipping to Niger, Sahel produce."),
         corps, jsonld,
     )
 
@@ -738,7 +800,7 @@ def page_services(lang):
 def page_arziki(lang):
     """arziki.html corrigée (mission, section 8) : centrée sur les entreprises."""
     p = prefixe(lang)
-    app = p + APP
+    app = adresse_app(p)
     besoins = [T(lang, "Financer une commande", "Fund an order"), T(lang, "Dossier clés en main", "Turnkey funding file"), "Business plan",
                T(lang, "États financiers", "Financial statements"), T(lang, "Formation", "Training"), T(lang, "Autre", "Other")]
     faq = [
@@ -769,6 +831,7 @@ def page_arziki(lang):
             <li>{T(lang, "Les contrats et les garanties sont passés devant notaire. Le fournisseur est payé directement.", "Contracts and guarantees are signed before a notary. The supplier is paid directly.")}</li>
             <li>{T(lang, "Vous livrez votre client et vous réglez à l'échéance.", "You deliver your client and pay on the due date.")}</li>
           </ol>
+          <p class="discret">{T(lang, "Pour les PME comme pour les grandes entreprises, avec un réseau de fournisseurs qui acceptent aussi le paiement différé. Togo, Niger, Bénin.", "For SMEs and large companies alike, with a network of suppliers who also accept deferred payment. Togo, Niger, Benin.")}</p>
         </div>
         <div class="photo">{img(p, 'chantier', T(lang, 'Livraison de matériaux sur un chantier', 'Building materials delivered to a site'))}</div>
       </div>
@@ -778,10 +841,10 @@ def page_arziki(lang):
         <span class="sur">{T(lang, "Services aux entreprises", "Business services")}</span>
         <h2>{T(lang, "Vos dossiers préparés par des experts", "Your files prepared by experts")}</h2>
         <div class="grille">
-          <article class="carte"><div class="c"><h3>{T(lang, "Dossier clés en main", "Turnkey funding file")}</h3><p>{T(lang, "Un dossier de financement complet, à présenter tel quel à une banque ou à un partenaire.", "A complete funding file, ready to present to a bank or partner.")}</p></div></article>
-          <article class="carte"><div class="c"><h3>Business plan</h3><p>{T(lang, "Projections, stratégie et chiffres clairs pour convaincre.", "Projections, strategy and clear figures to convince.")}</p></div></article>
-          <article class="carte"><div class="c"><h3>{T(lang, "États financiers", "Financial statements")}</h3><p>{T(lang, "Analyse SYSCOHADA et prévisionnels ; états certifiés avec un expert-comptable agréé partenaire.", "SYSCOHADA analysis and forecasts; certified statements with an approved partner accountant.")}</p></div></article>
-          <article class="carte"><div class="c"><h3>{T(lang, "Formation et recherche d'arrangeurs", "Training and arranger search")}</h3><p>{T(lang, "Former vos équipes, et trouver l'arrangeur adapté à un grand projet.", "Train your teams, and find the right arranger for a large project.")}</p></div></article>
+          <article class="carte"><div class="c"><h3>{T(lang, "Dossier clés en main", "Turnkey funding file")}</h3><p>{T(lang, "Un dossier de financement complet, à présenter tel quel à une banque, un arrangeur ou une société de leasing.", "A complete funding file, to present as it is to a bank, an arranger or a leasing company.")}</p></div></article>
+          <article class="carte"><div class="c"><h3>Business plan</h3><p>{T(lang, "Projections, rentabilité et stratégie, au format attendu par les financeurs.", "Projections, profitability and strategy, in the format funders expect.")}</p></div></article>
+          <article class="carte"><div class="c"><h3>{T(lang, "États financiers", "Financial statements")}</h3><p>{T(lang, "Mise en forme et analyse de vos comptes (SYSCOHADA) pour rassurer les partenaires ; états certifiés avec un expert-comptable agréé partenaire.", "Structuring and analysis of your accounts (SYSCOHADA) to reassure partners; certified statements with an approved partner accountant.")}</p></div></article>
+          <article class="carte"><div class="c"><h3>{T(lang, "Formation et recherche d'arrangeurs", "Training and arranger search")}</h3><p>{T(lang, "Gestion financière et préparation au financement pour vos équipes ; recherche de l'arrangeur adapté à un grand projet.", "Financial management and funding readiness for your teams; finding the right arranger for a large project.")}</p></div></article>
         </div>
       </div>
     </section>

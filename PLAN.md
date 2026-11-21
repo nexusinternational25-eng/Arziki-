@@ -30,7 +30,7 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 
 - [x] Lire le code ARZIKI et le site actuel
 - [x] Rédiger ce plan
-- [ ] Recevoir `services.html` et `arziki.html`
+- [x] Recevoir `services.html` et `arziki.html` (reçus le 21 novembre)
 - [x] Recevoir les décisions 1, 2 et 4
 
 ## 2. Serveur ARZIKI et sécurité
@@ -79,9 +79,9 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 - [x] En-tête et pied de page communs, Poppins, FR/EN, couleurs vives, mobile d'abord (générateur site/construire.py)
 - [x] Accueil, Nos expertises, Formations, Contact (formulaires vers les deux adresses, anti-spam, WhatsApp)
 - [x] services.html construite d'après la mission
-- [ ] services.html : reprendre le contenu du fichier fourni par le propriétaire (en attente du fichier)
+- [x] services.html : contenu du fichier fourni repris en entier (services, formules et prix, étapes, pourquoi nous, formulaire avec dates)
 - [x] arziki.html corrigée (section 8 de la mission), avertissement R8
-- [ ] arziki.html : reprendre le design du fichier fourni (en attente du fichier)
+- [x] arziki.html : éléments conformes du fichier fourni repris ; bloc investisseurs, « encadré par notaire », « prêts » et formulaire Entreprise/Investisseur retirés (section 8)
 - [x] algerie-niger.html en français, arabe (de droite à gauche) et anglais ; arabe à faire relire
 - [x] SEO de base : titres, descriptions, réseaux sociaux, sitemap.xml, robots.txt
 
