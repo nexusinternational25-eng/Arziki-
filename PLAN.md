@@ -35,16 +35,17 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 
 ## 2. Serveur ARZIKI et sécurité
 
-- [ ] Modèle des opérations selon la décision 1 (calcul, statuts, garanties OHADA)
+- [x] Modèle des opérations selon la décision 1 (calcul, statuts, garanties OHADA)
 - [x] Coût annuel équivalent de la majoration, alerte au-delà de 24 % (paramétrable)
-- [ ] Accès des partenaires selon la décision 2 (invitation seule, plafond paramétrable, blocage dur)
-- [ ] Cycle de vie complet des opérations côté serveur (Cloud Functions), journal d'audit
+- [x] Accès des partenaires selon la décision 2 (invitation seule, plafond paramétrable, blocage dur) : côté serveur
+- [x] Cycle de vie complet des opérations côté serveur (Cloud Functions), journal d'audit
 - [ ] Manifestation d'intérêt non engageante, avec la mention à l'écran
-- [ ] KYC : bénéficiaire effectif (entreprises), personne politiquement exposée (partenaires), conservation 10 ans, aucune suppression par l'utilisateur
-- [ ] Champ du numéro de déclaration IPDCP (paramètres)
-- [ ] Fichiers : PDF, JPG, PNG seulement, taille limitée (règles Storage et contrôles)
-- [ ] Tests : calculs, cycle de vie, règles d'accès, plafond de partenaires
-- [ ] Environnements de test et de production séparés
+- [x] KYC : bénéficiaire effectif (entreprises), personne politiquement exposée (partenaires), conservation 10 ans, aucune suppression par l'utilisateur
+- [x] Champ du numéro de déclaration IPDCP (paramètres) : côté serveur, écran à faire
+- [x] Fichiers : PDF, JPG, PNG seulement, 10 Mo maximum ; documents d'opération par lien temporaire de 15 minutes, chaque téléchargement inscrit au journal
+- [x] Tests : calculs, cycle de vie, règles d'accès, plafond de partenaires (56 tests serveur, 17 tests de règles, 20 tests application)
+- [ ] Environnements de test et de production séparés (deux projets Firebase : à créer avec le propriétaire)
+- [ ] Journaliser aussi la consultation des pièces KYC par l'équipe (passer par un lien temporaire)
 
 ## 3. Espaces de l'application
 

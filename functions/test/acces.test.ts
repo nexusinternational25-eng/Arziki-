@@ -85,7 +85,7 @@ describe("outils", () => {
     expect(normaliserTelephone("0022990123456")).toBe("+22990123456");
     expect(normaliserTelephone("+225 07 00 00 00 00")).toBe("+2250700000000");
   });
-  it("un candidat reste en attente même avec une identité validée", () => {
+  it("un ancien candidat reste en attente même avec une identité validée", () => {
     expect(statutApres("candidat_cercle", "valide")).toBe("en_attente");
     expect(statutApres("membre", "valide")).toBe("actif");
     expect(statutApres("membre", "en_cours")).toBe("en_attente");

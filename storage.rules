@@ -14,11 +14,10 @@ service firebase.storage {
         && request.auth.token.firebase.get('sign_in_second_factor', null) != null;
     }
 
-    // Photo ou PDF, 10 Mo maximum.
+    // PDF, JPG ou PNG seulement, 10 Mo maximum (section 24).
     function documentAccepte() {
       return request.resource.size < 10 * 1024 * 1024
-        && (request.resource.contentType.matches('image/.*')
-            || request.resource.contentType == 'application/pdf');
+        && request.resource.contentType in ['application/pdf', 'image/jpeg', 'image/png'];
     }
 
     match /{tout=**} {
@@ -30,6 +29,31 @@ service firebase.storage {
     match /kyc/{uid}/{fichier} {
       allow read: if connecte() && (request.auth.uid == uid || estEquipe());
       allow create: if connecte() && request.auth.uid == uid && documentAccepte();
+      allow update, delete: if false;
+    }
+
+    // Pièces d'une entreprise (bon de commande, devis) : son dossier, lu par l'équipe.
+    match /entreprises/{uid}/{fichier} {
+      allow read: if connecte() && (request.auth.uid == uid || estEquipe());
+      allow create: if connecte() && request.auth.uid == uid && request.auth.token.role == 'entreprise' && documentAccepte();
+      allow update, delete: if false;
+    }
+
+    // Actes déposés par un notaire : son dossier, lu par l'équipe. Le serveur les
+    // rattache ensuite à l'opération (fonction majGarantie).
+    match /notaires/{uid}/{fichier} {
+      allow read: if connecte() && (request.auth.uid == uid || estEquipe());
+      allow create: if connecte() && request.auth.uid == uid && request.auth.token.role == 'notaire' && documentAccepte();
+      allow update, delete: if false;
+    }
+
+    // Documents d'une opération (projets de contrats, actes, garanties) : l'équipe
+    // dépose et lit. Les autres (entreprise, notaire, partenaires proposés) passent
+    // par la fonction lienDocument, qui vérifie l'accès et donne un lien de 15 minutes.
+    // Jamais de lien public.
+    match /operations/{id}/{fichier} {
+      allow read: if estEquipe();
+      allow create: if estEquipe() && documentAccepte();
       allow update, delete: if false;
     }
   }

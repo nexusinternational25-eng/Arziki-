@@ -31,11 +31,9 @@ export const ROLES_ADMINISTRATION: readonly Role[] = ["super_admin", "admin", "a
 export const ROLES_VALIDATEURS: readonly Role[] = ["super_admin", "admin"];
 
 /** Rôles qu'une personne peut se donner elle-même à l'inscription (statut en_attente). */
-export const ROLES_INSCRIPTION_LIBRE: readonly Role[] = ["entreprise", "fournisseur", "notaire", "candidat_cercle"];
+// Section 24.2 : plus de candidature spontanée au Cercle (invitation seule).
+export const ROLES_INSCRIPTION_LIBRE: readonly Role[] = ["entreprise", "fournisseur", "notaire"];
 
-/** Au-delà de 100 personnes sans lien juridique : appel public à l'épargne (UMOA). */
-export const LIMITE_TAILLE_CERCLE = 100;
-export const SEUIL_ALERTE_TAILLE_CERCLE = 90;
 
 export class ErreurAcces extends Error {
   constructor(

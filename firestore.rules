@@ -2,7 +2,7 @@ rules_version = '2';
 
 // Règles de sécurité Firestore ARZIKI (CLAUDE.md, section 13 et section 21).
 // Principe : tout est interdit par défaut. Les écritures sensibles (rôles,
-// statuts, montants, invitations, candidatures, journal) passent uniquement
+// statuts, montants, invitations, journal) passent uniquement
 // par les Cloud Functions, qui contournent ces règles avec les droits serveur.
 
 service cloud.firestore {
@@ -43,11 +43,6 @@ service cloud.firestore {
         && profil().kycStatut == 'valide';
     }
 
-    // Un membre voit les opérations PME ; un partenaire voit aussi les opérations Entreprises.
-    function visiblePourMonNiveau(visibilite) {
-      return visibilite == 'membre'
-        || (visibilite == 'partenaire' && role() in ['partenaire', 'partenaire_strategique']);
-    }
 
     // ----- Par défaut : rien -----
 
@@ -82,11 +77,8 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Candidatures : la personne voit la sienne, les administrateurs voient tout.
-    match /candidatures/{uid} {
-      allow read: if connecte() && (request.auth.uid == uid || estAdmin());
-      allow write: if false;
-    }
+    // Candidatures : supprimées le 21 novembre 2026 (invitation seule, section 24.2).
+    // Plus aucune règle : la collection reste fermée par la règle par défaut.
 
     // Journal d'audit : lecture par les administrateurs, jamais modifiable.
     match /audit/{id} {
@@ -94,15 +86,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ----- Opérations -----
+    // ----- Opérations en vente à terme (section 24) -----
+    // Un partenaire ne voit QUE les opérations qui lui ont été proposées, et
+    // seulement si son compte est actif et son identité validée (R3, R6).
+    // Les montants et statuts ne s'écrivent que par les Cloud Functions.
 
     match /operations/{operationId} {
       allow read: if estEquipe()
-        || (investisseurVerifie()
-            && resource.data.statut == 'financement_ouvert'
-            && visiblePourMonNiveau(resource.data.visibilite))
+        || (investisseurVerifie() && request.auth.uid in resource.data.get('partenairesProposes', []))
         || (connecte() && role() == 'entreprise' && resource.data.entrepriseUid == request.auth.uid)
-        || (connecte() && role() == 'notaire' && resource.data.notaireUid == request.auth.uid)
+        || (connecte() && role() == 'notaire' && resource.data.get('notaireUid', '') == request.auth.uid)
         || (connecte() && role() == 'fournisseur' && request.auth.uid in resource.data.get('fournisseurUids', []));
       allow write: if false;
 
@@ -113,28 +106,15 @@ service cloud.firestore {
       match /evenements/{eventId} {
         allow read: if estEquipe()
           || (connecte() && role() == 'entreprise' && operation().entrepriseUid == request.auth.uid)
-          || (connecte() && role() == 'notaire' && operation().notaireUid == request.auth.uid);
+          || (connecte() && role() == 'notaire' && operation().get('notaireUid', '') == request.auth.uid);
         allow write: if false;
       }
 
-      // Une entreprise ne voit JAMAIS les participations ni l'identité des investisseurs.
-      match /participations/{participationId} {
-        allow read: if estEquipe()
-          || (connecte() && resource.data.uid == request.auth.uid)
-          || (connecte() && role() == 'notaire' && operation().notaireUid == request.auth.uid);
-        // Intention de participation : champs limités, statut imposé.
-        allow create: if investisseurVerifie()
-          && operation().statut == 'financement_ouvert'
-          && visiblePourMonNiveau(operation().visibilite)
-          && request.resource.data.keys().hasOnly(['uid', 'montant', 'statut', 'creeLe'])
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.statut == 'en_attente_versement'
-          && request.resource.data.montant is int
-          && request.resource.data.montant >= operation().minParticipant
-          && request.resource.data.montant <= operation().maxParticipant
-          && request.resource.data.creeLe == request.time;
-        // Pas de suppression : seulement une annulation tracée par une Cloud Function.
-        allow update, delete: if false;
+      // Manifestations d'intérêt (non engageantes) : chaque partenaire voit la sienne,
+      // l'équipe voit tout. L'entreprise ne voit jamais qui a manifesté son intérêt.
+      match /interets/{uid} {
+        allow read: if estEquipe() || (investisseurVerifie() && request.auth.uid == uid);
+        allow write: if false;
       }
     }
 

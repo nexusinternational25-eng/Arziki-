@@ -1,4 +1,5 @@
-// Pièces demandées pour la vérification d'identité (CLAUDE.md, section 7).
+// Pièces demandées pour la vérification d'identité (CLAUDE.md, sections 7 et 24.4).
+// Les pièces sont conservées 10 ans ; l'utilisateur ne peut pas les supprimer.
 
 import 'roles.dart';
 
@@ -13,10 +14,11 @@ const _personnePhysique = [
   PieceKyc('identite_recto', "Pièce d'identité (recto) : CNI, passeport ou carte consulaire"),
   PieceKyc('identite_verso', "Pièce d'identité (verso)"),
   PieceKyc('selfie', 'Selfie de contrôle'),
-  PieceKyc('justificatif_adresse', "Justificatif d'adresse"),
+  PieceKyc('justificatif_adresse', 'Justificatif de domicile'),
 ];
 
-const _origineFonds = PieceKyc('origine_fonds', "Déclaration d'origine des fonds");
+const _origineFonds = PieceKyc('origine_fonds', "Justificatif de l'origine des fonds");
+const _ppe = PieceKyc('declaration_ppe', 'Déclaration de personne politiquement exposée (signée)');
 const _justificatifBancaire = PieceKyc('justificatif_bancaire', 'Justificatif bancaire récent');
 
 /// Liste des pièces attendues selon le rôle.
@@ -26,12 +28,14 @@ List<PieceKyc> piecesKyc(Role role) => switch (role) {
           PieceKyc('nif', 'NIF'),
           PieceKyc('statuts', 'Statuts'),
           PieceKyc('identite_dirigeant', "Pièce d'identité du dirigeant"),
+          PieceKyc('beneficiaire_effectif', 'Déclaration du bénéficiaire effectif'),
           PieceKyc('pouvoir_signataire', 'Pouvoir du signataire (si ce n\'est pas le gérant)', obligatoire: false),
         ],
-      Role.membre || Role.candidatCercle => const [..._personnePhysique, _origineFonds],
+      Role.membre || Role.candidatCercle => const [..._personnePhysique, _origineFonds, _ppe],
       Role.partenaire || Role.partenaireStrategique => const [
           ..._personnePhysique,
           _origineFonds,
+          _ppe,
           _justificatifBancaire,
         ],
       Role.notaire => const [
@@ -45,7 +49,7 @@ List<PieceKyc> piecesKyc(Role role) => switch (role) {
 const originesFonds = [
   'Salaire',
   'Activité commerciale',
-  'Épargne',
+  'Économies personnelles',
   "Vente d'un bien",
   'Héritage ou donation',
   'Autre (à préciser)',

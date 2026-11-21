@@ -4,6 +4,7 @@
 
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { defineSecret, defineString } from "firebase-functions/params";
@@ -13,7 +14,6 @@ import {
   Acteur,
   ErreurAcces,
   InvitationDoc,
-  LIMITE_TAILLE_CERCLE,
   NIVEAUX,
   ROLES_INSCRIPTION_LIBRE,
   ROLES_VALIDATEURS,
@@ -44,6 +44,23 @@ import {
   messageConfirme,
   signatureValide,
 } from "./whatsapp";
+import {
+  Apport,
+  ErreurOperation,
+  Garantie,
+  PLAFOND_PARTENAIRES_DEFAUT,
+  SEUIL_ALERTE_COUT_ANNUEL,
+  STATUTS_GARANTIE,
+  Statut,
+  TYPES_GARANTIE,
+  coutAnnuelEquivalent,
+  estStatut,
+  prixRevente,
+  repartir,
+  verifierPlaceDisponible,
+  verifierPlafondParametre,
+  verifierTransition,
+} from "./operations";
 import { erreurTelephone, paysDuTelephone } from "./pays";
 import { REGION } from "./region";
 
@@ -89,6 +106,7 @@ function proteger<T>(gestionnaire: (req: CallableRequest) => Promise<T>) {
       return await gestionnaire(req);
     } catch (e) {
       if (e instanceof ErreurAcces) throw new HttpsError(e.code, e.message);
+      if (e instanceof ErreurOperation) throw new HttpsError(e.code, e.message);
       throw e;
     }
   };
@@ -105,14 +123,32 @@ async function lireProfil(uid: string) {
   return snap.data() as { role: Role; statut: string; kycStatut: string; telephone?: string };
 }
 
-async function tailleDuCercle(): Promise<number> {
-  const agg = await db
+/**
+ * Places occupées dans le Cercle (section 24.2) : partenaires actifs ou en attente,
+ * plus les invitations encore valables (non utilisées, non annulées, non expirées).
+ */
+async function placesOccupees(): Promise<number> {
+  const comptes = await db
     .collection("users")
     .where("role", "in", [...NIVEAUX])
     .where("statut", "in", ["actif", "en_attente"])
     .count()
     .get();
-  return agg.data().count;
+  const invitations = await db.collection("invitations").where("utiliseLe", "==", null).where("annuleeLe", "==", null).get();
+  const maintenant = Date.now();
+  const valables = invitations.docs.filter((d) => (d.get("expireLe") as Timestamp).toMillis() > maintenant).length;
+  return comptes.data().count + valables;
+}
+
+/** Paramètres réglés par le super administrateur, avec leurs valeurs par défaut. */
+async function lireParametres() {
+  const d = (await db.doc("parametres/global").get()).data() ?? {};
+  return {
+    plafondPartenaires: Number.isInteger(d.plafondPartenaires) ? (d.plafondPartenaires as number) : PLAFOND_PARTENAIRES_DEFAUT,
+    seuilAlerteCoutAnnuel: typeof d.seuilAlerteCoutAnnuel === "number" ? d.seuilAlerteCoutAnnuel : SEUIL_ALERTE_COUT_ANNUEL,
+    tauxTva: typeof d.tauxTva === "number" ? d.tauxTva : 18,
+    numeroIpdcp: typeof d.numeroIpdcp === "string" ? d.numeroIpdcp : "",
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -153,7 +189,6 @@ export const inscrire = onCall(
       } else {
         const roles: Record<string, Role> = {
           entreprise: "entreprise",
-          candidature: "candidat_cercle",
           fournisseur: "fournisseur",
           notaire: "notaire",
         };
@@ -223,6 +258,8 @@ export const creerInvitation = onCall(
     }
     const deja = await db.collection("users").where("telephone", "==", pourTelephone).limit(1).get();
     if (!deja.empty) throw new HttpsError("already-exists", "Ce numéro a déjà un compte ARZIKI.");
+    // Plafond de partenaires (section 24.2) : 50 par défaut, jamais plus de 99.
+    verifierPlaceDisponible(await placesOccupees(), (await lireParametres()).plafondPartenaires);
 
     const expireLe = Timestamp.fromMillis(Date.now() + jours * 24 * 3600 * 1000);
     for (let essai = 0; essai < 5; essai++) {
@@ -270,98 +307,6 @@ export const annulerInvitation = onCall(
 );
 
 // ---------------------------------------------------------------------------
-// Candidatures au Cercle
-// ---------------------------------------------------------------------------
-
-export const deposerCandidature = onCall(
-  options,
-  proteger(async (req) => {
-    const acteur = acteurDe(req);
-    if (acteur.role !== "candidat_cercle") {
-      throw new HttpsError("permission-denied", "Seul un candidat au Cercle peut déposer une candidature.");
-    }
-    const prenom = texte(req.data?.prenom, "prénom", 1, 80);
-    const nom = texte(req.data?.nom, "nom", 1, 80);
-    const niveauSouhaite = req.data?.niveauSouhaite;
-    if (!estNiveau(niveauSouhaite)) throw new HttpsError("invalid-argument", "Niveau invalide.");
-    const tranche = texte(req.data?.trancheEnvisagee, "tranche", 3, 80);
-    const source = texte(req.data?.commentNousConnu, "source", 3, 120);
-
-    await db.runTransaction(async (tx) => {
-      const ref = db.doc(`candidatures/${acteur.uid}`);
-      const existante = await tx.get(ref);
-      if (existante.exists && existante.get("statut") === "soumise") {
-        throw new ErreurAcces("Votre candidature est déjà en cours d'examen.", "failed-precondition");
-      }
-      const profil = await tx.get(db.doc(`users/${acteur.uid}`));
-      tx.update(profil.ref, { prenom, nom, majLe: FieldValue.serverTimestamp() });
-      tx.set(ref, {
-        uid: acteur.uid,
-        nomComplet: `${prenom} ${nom}`,
-        telephone: profil.get("telephone") ?? "",
-        niveauSouhaite,
-        trancheEnvisagee: tranche,
-        commentNousConnu: source,
-        soumiseLe: FieldValue.serverTimestamp(),
-        statut: "soumise",
-        decidePar: null,
-        decideLe: null,
-        motif: null,
-      });
-      ecrireAudit(tx, acteur.uid, "deposer_candidature", `candidatures/${acteur.uid}`, null, niveauSouhaite);
-    });
-    return { ok: true };
-  }),
-);
-
-export const deciderCandidature = onCall(
-  options,
-  proteger(async (req) => {
-    const acteur = administrateur(req);
-    const uid = texte(req.data?.uid, "uid", 1, 128);
-    const decision = req.data?.decision;
-
-    if (decision === "refuser") {
-      const motif = texte(req.data?.motif, "motif", 3, 300);
-      await db.runTransaction(async (tx) => {
-        const ref = db.doc(`candidatures/${uid}`);
-        const c = await tx.get(ref);
-        if (!c.exists || c.get("statut") !== "soumise") {
-          throw new ErreurAcces("Aucune candidature en attente pour ce compte.", "failed-precondition");
-        }
-        tx.update(ref, { statut: "refusee", decidePar: acteur.uid, decideLe: FieldValue.serverTimestamp(), motif });
-        ecrireAudit(tx, acteur.uid, "refuser_candidat", `candidatures/${uid}`, null, motif);
-      });
-      return { ok: true };
-    }
-
-    if (decision !== "admettre") throw new HttpsError("invalid-argument", "Décision inconnue.");
-    const niveau = req.data?.niveau;
-    if (!estNiveau(niveau)) throw new HttpsError("invalid-argument", "Niveau invalide.");
-    if ((await tailleDuCercle()) >= LIMITE_TAILLE_CERCLE) {
-      throw new HttpsError(
-        "failed-precondition",
-        "Le Cercle a atteint sa taille maximale. Consultez votre avocat avant toute nouvelle admission.",
-      );
-    }
-    await db.runTransaction(async (tx) => {
-      const refC = db.doc(`candidatures/${uid}`);
-      const refU = db.doc(`users/${uid}`);
-      const [c, u] = await Promise.all([tx.get(refC), tx.get(refU)]);
-      if (!c.exists || c.get("statut") !== "soumise" || !u.exists) {
-        throw new ErreurAcces("Aucune candidature en attente pour ce compte.", "failed-precondition");
-      }
-      const statut = statutApres(niveau, u.get("kycStatut"));
-      tx.update(refC, { statut: "admise", decidePar: acteur.uid, decideLe: FieldValue.serverTimestamp() });
-      tx.update(refU, { role: niveau, niveau, statut, majLe: FieldValue.serverTimestamp() });
-      ecrireAudit(tx, acteur.uid, "admettre_candidat", `users/${uid}`, u.get("role"), niveau);
-    });
-    await poserRole(uid, niveau);
-    return { ok: true };
-  }),
-);
-
-// ---------------------------------------------------------------------------
 // Vérification d'identité et statut des comptes
 // ---------------------------------------------------------------------------
 
@@ -383,11 +328,24 @@ export const soumettreKyc = onCall(
       const ref = db.doc(`users/${acteur.uid}`);
       const u = await tx.get(ref);
       if (!u.exists) throw new ErreurAcces("Compte introuvable.", "not-found");
-      tx.set(db.doc(`kyc/${acteur.uid}`), {
-        pieces,
-        origineFonds: typeof req.data?.origineFonds === "string" ? req.data.origineFonds.slice(0, 120) : null,
-        soumisLe: FieldValue.serverTimestamp(),
-      });
+      // Partenaires financiers (R6) : déclaration de personne politiquement exposée obligatoire.
+      const estPartenaire = (NIVEAUX as readonly string[]).includes(u.get("role"));
+      const ppe = req.data?.personnePolitiquementExposee;
+      if (estPartenaire && typeof ppe !== "boolean") {
+        throw new ErreurAcces("Indiquez si vous êtes une personne politiquement exposée.", "invalid-argument");
+      }
+      // Fusion : une nouvelle pièce s'ajoute, rien n'est effacé (conservation 10 ans, R6).
+      tx.set(
+        db.doc(`kyc/${acteur.uid}`),
+        {
+          pieces,
+          origineFonds: typeof req.data?.origineFonds === "string" ? req.data.origineFonds.slice(0, 120) : null,
+          ...(estPartenaire ? { personnePolitiquementExposee: ppe } : {}),
+          soumisLe: FieldValue.serverTimestamp(),
+          conserverJusquA: Timestamp.fromMillis(Date.now() + 10 * 365.25 * 24 * 3600 * 1000),
+        },
+        { merge: true },
+      );
       tx.update(ref, { kycStatut: "en_cours", majLe: FieldValue.serverTimestamp() });
       ecrireAudit(tx, acteur.uid, "soumettre_kyc", `users/${acteur.uid}`, u.get("kycStatut"), "en_cours");
     });
@@ -701,4 +659,383 @@ export const webhookWhatsapp = onRequest(
     // Toujours répondre 200 à Meta, sinon il renvoie le message.
     res.sendStatus(200);
   },
+);
+
+// ---------------------------------------------------------------------------
+// Paramètres (super administrateur) : plafond de partenaires, seuil d'alerte,
+// TVA, numéro de déclaration IPDCP (CLAUDE.md, section 24)
+// ---------------------------------------------------------------------------
+
+export const definirParametres = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = administrateur(req, ["super_admin"]);
+    const actuels = await lireParametres();
+    const nouveaux = { ...actuels };
+    const d = req.data ?? {};
+    if (d.plafondPartenaires !== undefined) {
+      verifierPlafondParametre(Number(d.plafondPartenaires));
+      nouveaux.plafondPartenaires = Number(d.plafondPartenaires);
+    }
+    if (d.seuilAlerteCoutAnnuel !== undefined) {
+      const seuil = Number(d.seuilAlerteCoutAnnuel);
+      if (!Number.isFinite(seuil) || seuil <= 0 || seuil > 100) {
+        throw new HttpsError("invalid-argument", "Le seuil d'alerte doit être compris entre 0 et 100 %.");
+      }
+      nouveaux.seuilAlerteCoutAnnuel = seuil;
+    }
+    if (d.tauxTva !== undefined) {
+      const tva = Number(d.tauxTva);
+      if (!Number.isFinite(tva) || tva < 0 || tva > 50) throw new HttpsError("invalid-argument", "Taux de TVA invalide.");
+      nouveaux.tauxTva = tva;
+    }
+    if (d.numeroIpdcp !== undefined) nouveaux.numeroIpdcp = texte(d.numeroIpdcp, "numéro IPDCP", 0, 60);
+    await db.runTransaction(async (tx) => {
+      tx.set(db.doc("parametres/global"), nouveaux, { merge: true });
+      ecrireAudit(tx, acteur.uid, "modifier_parametres", "parametres/global", JSON.stringify(actuels), JSON.stringify(nouveaux));
+    });
+    return nouveaux;
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Opérations en vente à terme (CLAUDE.md, section 24 ; logique dans operations.ts)
+// L'application ne décide jamais d'un statut ni d'un montant : tout passe ici.
+// ---------------------------------------------------------------------------
+
+const EQUIPE: readonly Role[] = ["super_admin", "admin", "analyste"];
+
+function montant(valeur: unknown, champ: string, zeroAutorise = false): number {
+  const n = Number(valeur);
+  if (!Number.isInteger(n) || n < 0 || (!zeroAutorise && n === 0) || n > 10_000_000_000) {
+    throw new HttpsError("invalid-argument", `Champ « ${champ} » : montant entier en FCFA attendu.`);
+  }
+  return n;
+}
+
+/** Profil actif et identité validée (R6) : condition pour agir sur une opération. */
+async function exigerCompteVerifie(uid: string, roles: readonly Role[]) {
+  const p = await lireProfil(uid);
+  if (!roles.includes(p.role)) throw new ErreurAcces("Action réservée à un autre type de compte.");
+  if (p.statut !== "actif" || p.kycStatut !== "valide") {
+    throw new ErreurAcces("Votre compte doit être actif et votre identité validée.", "failed-precondition");
+  }
+  return p;
+}
+
+/** Une entreprise soumet une commande à financer (statut « soumise »). */
+export const soumettreDemande = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = acteurDe(req);
+    const p = await exigerCompteVerifie(acteur.uid, ["entreprise"]);
+    const d = req.data ?? {};
+    const ref = db.collection("operations").doc();
+    const doc = {
+      entrepriseUid: acteur.uid,
+      pays: (p as { pays?: string }).pays ?? "TG",
+      titre: texte(d.titre, "titre", 5, 120),
+      description: texte(d.description, "description", 10, 2000),
+      clientFinal: {
+        nom: texte(d.clientFinal?.nom, "client final", 2, 160),
+        rccm: typeof d.clientFinal?.rccm === "string" ? d.clientFinal.rccm.slice(0, 60) : null,
+        contact: texte(d.clientFinal?.contact, "contact du client final", 5, 160),
+      },
+      fournisseur: {
+        nom: texte(d.fournisseur?.nom, "fournisseur", 2, 160),
+        contact: texte(d.fournisseur?.contact, "contact du fournisseur", 5, 160),
+      },
+      montantCommande: montant(d.montantCommande, "montant de la commande"),
+      prixAchatDemande: montant(d.prixAchatDemande, "prix d'achat"),
+      delaiJours: Math.min(365, Math.max(1, Math.trunc(Number(d.delaiJours) || 0))),
+      garantiesProposees: Array.isArray(d.garantiesProposees)
+        ? d.garantiesProposees.filter((g: unknown) => (TYPES_GARANTIE as readonly unknown[]).includes(g))
+        : [],
+      statut: "soumise" as Statut,
+      garanties: [] as Garantie[],
+      partenairesProposes: [] as string[],
+      apportsRetenus: [] as Apport[],
+      nombreInterets: 0,
+      creeLe: FieldValue.serverTimestamp(),
+      majLe: FieldValue.serverTimestamp(),
+    };
+    await db.runTransaction(async (tx) => {
+      tx.create(ref, doc);
+      ecrireAudit(tx, acteur.uid, "soumettre_demande", `operations/${ref.id}`, null, String(doc.montantCommande));
+    });
+    return { id: ref.id };
+  }),
+);
+
+/**
+ * L'administrateur fixe les conditions de la vente à terme. Le serveur calcule le
+ * prix de revente et le coût annuel équivalent, et lève l'alerte au-delà du seuil.
+ */
+export const definirConditions = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = administrateur(req, EQUIPE);
+    const id = texte(req.data?.id, "id", 5, 64);
+    const conditions = {
+      prixAchat: montant(req.data?.prixAchat, "prix d'achat"),
+      majoration: montant(req.data?.majoration, "majoration", true),
+      dureeJours: Math.trunc(Number(req.data?.dureeJours)),
+    };
+    const commissionArziki = montant(req.data?.commissionArziki ?? 0, "commission ARZIKI", true);
+    const { seuilAlerteCoutAnnuel } = await lireParametres();
+    const revente = prixRevente(conditions);
+    const cout = coutAnnuelEquivalent(conditions);
+    const ref = db.doc(`operations/${id}`);
+    await db.runTransaction(async (tx) => {
+      const op = await tx.get(ref);
+      if (!op.exists) throw new ErreurAcces("Opération introuvable.", "not-found");
+      if (!["en_analyse", "proposee"].includes(op.get("statut"))) {
+        throw new ErreurAcces("Les conditions se fixent pendant l'analyse, avant toute signature.", "failed-precondition");
+      }
+      tx.update(ref, {
+        ...conditions,
+        prixRevente: revente,
+        commissionArziki,
+        coutAnnuelEquivalent: cout,
+        alerteCoutAnnuel: cout > seuilAlerteCoutAnnuel,
+        echeance: Timestamp.fromMillis(Date.now() + conditions.dureeJours * 24 * 3600 * 1000),
+        majLe: FieldValue.serverTimestamp(),
+      });
+      ecrireAudit(tx, acteur.uid, "definir_conditions", `operations/${id}`, null, `${conditions.prixAchat} + ${conditions.majoration} sur ${conditions.dureeJours} j (${cout} %)`);
+    });
+    return { prixRevente: revente, coutAnnuelEquivalent: cout, alerte: cout > seuilAlerteCoutAnnuel };
+  }),
+);
+
+/** Propose l'opération à des partenaires choisis, tous actifs et vérifiés. */
+export const proposerOperation = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = administrateur(req);
+    const id = texte(req.data?.id, "id", 5, 64);
+    const uids = Array.isArray(req.data?.partenaires) ? (req.data.partenaires as unknown[]).map((u) => texte(u, "partenaire", 1, 128)) : [];
+    if (uids.length === 0) throw new HttpsError("invalid-argument", "Choisissez au moins un partenaire.");
+    for (const uid of uids) await exigerCompteVerifie(uid, NIVEAUX);
+    const ref = db.doc(`operations/${id}`);
+    await db.runTransaction(async (tx) => {
+      const op = await tx.get(ref);
+      if (!op.exists) throw new ErreurAcces("Opération introuvable.", "not-found");
+      if (!op.get("prixRevente")) throw new ErreurAcces("Fixez d'abord les conditions de la vente à terme.", "failed-precondition");
+      const statut = op.get("statut") as Statut;
+      if (statut !== "proposee") verifierTransition(etatDe(op), "proposee");
+      tx.update(ref, {
+        statut: "proposee",
+        partenairesProposes: FieldValue.arrayUnion(...uids),
+        majLe: FieldValue.serverTimestamp(),
+      });
+      ecrireAudit(tx, acteur.uid, "proposer_operation", `operations/${id}`, statut, uids.join(", "));
+    });
+    return { ok: true };
+  }),
+);
+
+/**
+ * Un partenaire invité dit « Je suis intéressé ». Cette manifestation n'engage
+ * à rien : seule la signature devant notaire engage (R4).
+ */
+export const manifesterInteret = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = acteurDe(req);
+    await exigerCompteVerifie(acteur.uid, NIVEAUX);
+    const id = texte(req.data?.id, "id", 5, 64);
+    const montantIndicatif = montant(req.data?.montantIndicatif, "montant indicatif");
+    const ref = db.doc(`operations/${id}`);
+    await db.runTransaction(async (tx) => {
+      const op = await tx.get(ref);
+      if (!op.exists) throw new ErreurAcces("Opération introuvable.", "not-found");
+      if (!(op.get("partenairesProposes") as string[]).includes(acteur.uid)) {
+        throw new ErreurAcces("Cette opération ne vous a pas été proposée.");
+      }
+      const statut = op.get("statut") as Statut;
+      if (statut !== "proposee" && statut !== "interet_manifeste") {
+        throw new ErreurAcces("Cette opération n'est plus ouverte aux manifestations d'intérêt.", "failed-precondition");
+      }
+      if (montantIndicatif > (op.get("prixAchat") as number)) {
+        throw new ErreurAcces("Le montant indiqué dépasse le prix d'achat de l'opération.", "invalid-argument");
+      }
+      const refInteret = ref.collection("interets").doc(acteur.uid);
+      const deja = (await tx.get(refInteret)).exists;
+      tx.set(refInteret, {
+        uid: acteur.uid,
+        montantIndicatif,
+        engageant: false,
+        creeLe: FieldValue.serverTimestamp(),
+      });
+      tx.update(ref, {
+        statut: "interet_manifeste",
+        nombreInterets: deja ? op.get("nombreInterets") : (op.get("nombreInterets") as number) + 1,
+        majLe: FieldValue.serverTimestamp(),
+      });
+      ecrireAudit(tx, acteur.uid, "manifester_interet", `operations/${id}`, null, String(montantIndicatif));
+    });
+    return { ok: true };
+  }),
+);
+
+/** L'administrateur retient les apports pour la signature et calcule ce que chacun recevra. */
+export const retenirApports = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = administrateur(req);
+    const id = texte(req.data?.id, "id", 5, 64);
+    const apports: Apport[] = (Array.isArray(req.data?.apports) ? req.data.apports : []).map(
+      (a: { partenaireUid?: unknown; montant?: unknown }) => ({
+        partenaireUid: texte(a?.partenaireUid, "partenaire", 1, 128),
+        montant: montant(a?.montant, "apport"),
+      }),
+    );
+    const ref = db.doc(`operations/${id}`);
+    return db.runTransaction(async (tx) => {
+      const op = await tx.get(ref);
+      if (!op.exists) throw new ErreurAcces("Opération introuvable.", "not-found");
+      if (op.get("statut") !== "interet_manifeste") {
+        throw new ErreurAcces("Les apports se retiennent après les manifestations d'intérêt, avant la signature.", "failed-precondition");
+      }
+      for (const a of apports) {
+        if (!(await tx.get(ref.collection("interets").doc(a.partenaireUid))).exists) {
+          throw new ErreurAcces("Un partenaire retenu n'a pas manifesté son intérêt.", "failed-precondition");
+        }
+      }
+      const repartition = repartir(
+        { prixAchat: op.get("prixAchat"), majoration: op.get("majoration"), dureeJours: op.get("dureeJours") },
+        apports,
+      );
+      tx.update(ref, { apportsRetenus: apports, repartition, majLe: FieldValue.serverTimestamp() });
+      ecrireAudit(tx, acteur.uid, "retenir_apports", `operations/${id}`, null, apports.map((a) => `${a.partenaireUid}:${a.montant}`).join(", "));
+      return { repartition };
+    });
+  }),
+);
+
+/** Ajoute ou met à jour une garantie (administrateur, ou notaire assigné). */
+export const majGarantie = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = acteurDe(req);
+    const id = texte(req.data?.id, "id", 5, 64);
+    const type = req.data?.type;
+    const statut = req.data?.statut ?? "a_constituer";
+    if (!(TYPES_GARANTIE as readonly unknown[]).includes(type)) throw new HttpsError("invalid-argument", "Type de garantie inconnu.");
+    if (!(STATUTS_GARANTIE as readonly unknown[]).includes(statut)) throw new HttpsError("invalid-argument", "Statut de garantie inconnu.");
+    // Pièce : dans le dossier de l'opération (équipe) ou dans le dossier du notaire qui agit.
+    const brute = typeof req.data?.piece === "string" ? req.data.piece : null;
+    const piece =
+      brute && (brute.startsWith(`operations/${id}/`) || brute.startsWith(`notaires/${acteur.uid}/`)) && !brute.includes("..")
+        ? brute
+        : null;
+    const ref = db.doc(`operations/${id}`);
+    await db.runTransaction(async (tx) => {
+      const op = await tx.get(ref);
+      if (!op.exists) throw new ErreurAcces("Opération introuvable.", "not-found");
+      const estNotaire = acteur.role === "notaire" && op.get("notaireUid") === acteur.uid;
+      if (!estNotaire) exigerAdministration(acteur, ROLES_VALIDATEURS, EXIGER_DOUBLE_FACTEUR);
+      const garanties = [...((op.get("garanties") as Garantie[]) ?? [])];
+      const i = garanties.findIndex((g) => g.type === type);
+      const avant = i >= 0 ? garanties[i].statut : null;
+      const g: Garantie = { type, statut, piece: piece ?? (i >= 0 ? garanties[i].piece ?? null : null) };
+      if (i >= 0) garanties[i] = g;
+      else garanties.push(g);
+      tx.update(ref, { garanties, majLe: FieldValue.serverTimestamp() });
+      ecrireAudit(tx, acteur.uid, "maj_garantie", `operations/${id}`, avant, `${type}: ${statut}`);
+    });
+    return { ok: true };
+  }),
+);
+
+function etatDe(op: FirebaseFirestore.DocumentSnapshot) {
+  return {
+    statut: op.get("statut") as Statut,
+    garanties: (op.get("garanties") as Garantie[]) ?? [],
+    apportsRetenus: (op.get("apportsRetenus") as Apport[]) ?? [],
+    prixAchat: (op.get("prixAchat") as number) ?? 0,
+    nombreInterets: (op.get("nombreInterets") as number) ?? 0,
+  };
+}
+
+/**
+ * Change le statut d'une opération après vérification des conditions (R4).
+ * - analyste : mise en analyse, demande de pièces ;
+ * - notaire assigné : signature devant notaire, paiement au fournisseur (séquestre) ;
+ * - administrateur : tout le reste.
+ */
+export const changerStatutOperation = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = acteurDe(req);
+    const id = texte(req.data?.id, "id", 5, 64);
+    const vers = req.data?.statut;
+    if (!estStatut(vers)) throw new HttpsError("invalid-argument", "Statut inconnu.");
+    const motif = typeof req.data?.motif === "string" ? req.data.motif.slice(0, 500) : null;
+    if ((vers === "refusee" || vers === "annulee" || vers === "pieces_demandees") && !motif) {
+      throw new HttpsError("invalid-argument", "Un motif est obligatoire.");
+    }
+    const ref = db.doc(`operations/${id}`);
+    await db.runTransaction(async (tx) => {
+      const op = await tx.get(ref);
+      if (!op.exists) throw new ErreurAcces("Opération introuvable.", "not-found");
+      const estNotaire = acteur.role === "notaire" && op.get("notaireUid") === acteur.uid;
+      const pourAnalyste: Statut[] = ["en_analyse", "pieces_demandees"];
+      const pourNotaire: Statut[] = ["signee", "fournisseur_paye"];
+      if (estNotaire) {
+        if (!pourNotaire.includes(vers)) throw new ErreurAcces("Le notaire confirme seulement la signature et le paiement au fournisseur.");
+      } else if (acteur.role === "analyste") {
+        exigerAdministration(acteur, EQUIPE, EXIGER_DOUBLE_FACTEUR);
+        if (!pourAnalyste.includes(vers)) throw new ErreurAcces("Un analyste ne peut pas faire avancer cette étape.");
+      } else {
+        exigerAdministration(acteur, ROLES_VALIDATEURS, EXIGER_DOUBLE_FACTEUR);
+      }
+      const avant = op.get("statut") as Statut;
+      verifierTransition(etatDe(op), vers);
+      tx.update(ref, { statut: vers, majLe: FieldValue.serverTimestamp(), ...(motif ? { dernierMotif: motif } : {}) });
+      tx.create(ref.collection("evenements").doc(), {
+        de: avant,
+        vers,
+        par: acteur.uid,
+        motif,
+        le: FieldValue.serverTimestamp(),
+      });
+      ecrireAudit(tx, acteur.uid, "changer_statut_operation", `operations/${id}`, avant, vers);
+    });
+    return { ok: true };
+  }),
+);
+
+/**
+ * Lien temporaire (15 minutes) vers un document d'une opération, après contrôle :
+ * équipe, entreprise concernée, notaire assigné, ou partenaire vérifié à qui
+ * l'opération a été proposée. Chaque téléchargement est inscrit au journal (R7).
+ */
+export const lienDocument = onCall(
+  options,
+  proteger(async (req) => {
+    const acteur = acteurDe(req);
+    const id = texte(req.data?.id, "id", 5, 64);
+    const chemin = texte(req.data?.chemin, "chemin", 5, 300);
+    const op = await db.doc(`operations/${id}`).get();
+    if (!op.exists) throw new ErreurAcces("Opération introuvable.", "not-found");
+    const documents = [
+      ...((op.get("garanties") as Garantie[]) ?? []).map((g) => g.piece).filter(Boolean),
+      ...(((op.get("documents") as string[] | undefined) ?? [])),
+    ];
+    if (!documents.includes(chemin)) throw new ErreurAcces("Document inconnu pour cette opération.", "not-found");
+    let autorise = EQUIPE.includes(acteur.role as Role) && acteur.doubleFacteur;
+    autorise ||= acteur.role === "entreprise" && op.get("entrepriseUid") === acteur.uid;
+    autorise ||= acteur.role === "notaire" && op.get("notaireUid") === acteur.uid;
+    if (!autorise && (NIVEAUX as readonly string[]).includes(acteur.role ?? "")) {
+      const p = await lireProfil(acteur.uid);
+      autorise = p.statut === "actif" && p.kycStatut === "valide" && (op.get("partenairesProposes") as string[]).includes(acteur.uid);
+    }
+    if (!autorise) throw new ErreurAcces("Vous n'avez pas accès à ce document.");
+    const [url] = await getStorage().bucket().file(chemin).getSignedUrl({ action: "read", expires: Date.now() + 15 * 60 * 1000 });
+    await db.runTransaction(async (tx) => {
+      ecrireAudit(tx, acteur.uid, "telecharger_document", `operations/${id}`, null, chemin);
+    });
+    return { url };
+  }),
 );

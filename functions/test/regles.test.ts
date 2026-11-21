@@ -46,27 +46,26 @@ beforeEach(async () => {
     await setDoc(doc(f, "users/membre"), profil("membre"));
     await setDoc(doc(f, "users/membre_attente"), profil("membre", "en_attente", "en_cours"));
     await setDoc(doc(f, "users/partenaire"), profil("partenaire"));
-    await setDoc(doc(f, "users/candidat"), profil("candidat_cercle", "en_attente", "valide"));
     await setDoc(doc(f, "users/ent"), profil("entreprise"));
     await setDoc(doc(f, "users/ent2"), profil("entreprise"));
     await setDoc(doc(f, "users/notaire"), profil("notaire"));
     await setDoc(doc(f, "users/fourn"), profil("fournisseur"));
     await setDoc(doc(f, "invitations/ARZ-AAAA-BBBB"), { pourNom: "Awa", pourTelephone: "+22890123456", niveau: "membre" });
-    await setDoc(doc(f, "candidatures/candidat"), { uid: "candidat", statut: "soumise" });
+    await setDoc(doc(f, "candidatures/ancien"), { uid: "ancien", statut: "soumise" });
     await setDoc(doc(f, "audit/a1"), { action: "test" });
-    const op = (visibilite: string, statut = "financement_ouvert") => ({
+    const op = (partenairesProposes: string[], statut = "proposee") => ({
       statut,
-      visibilite,
+      partenairesProposes,
       entrepriseUid: "ent",
       notaireUid: "notaire",
       fournisseurUids: ["fourn"],
-      minParticipant: 500000,
-      maxParticipant: 5000000,
+      prixAchat: 10000000,
+      majoration: 300000,
     });
-    await setDoc(doc(f, "operations/pme"), op("membre"));
-    await setDoc(doc(f, "operations/grand"), op("partenaire"));
-    await setDoc(doc(f, "operations/fermee"), op("membre", "en_verification"));
-    await setDoc(doc(f, "operations/pme/participations/p1"), { uid: "membre", montant: 1000000, statut: "versement_confirme" });
+    await setDoc(doc(f, "operations/pme"), op(["membre", "membre_attente"]));
+    await setDoc(doc(f, "operations/grand"), op(["partenaire"]));
+    await setDoc(doc(f, "operations/fermee"), op([], "en_analyse"));
+    await setDoc(doc(f, "operations/pme/interets/membre"), { uid: "membre", montantIndicatif: 1000000, engageant: false });
     await setDoc(doc(f, "operations/pme/evenements/e1"), { type: "statut" });
   });
 });
@@ -99,7 +98,7 @@ describe("profils", () => {
   });
 });
 
-describe("invitations, candidatures et journal", () => {
+describe("invitations et journal", () => {
   it("les invitations : administrateurs seulement, en lecture", async () => {
     await assertSucceeds(getDoc(doc(db("sa", "super_admin", true), "invitations/ARZ-AAAA-BBBB")));
     await assertSucceeds(getDoc(doc(db("ad", "admin", true), "invitations/ARZ-AAAA-BBBB")));
@@ -112,10 +111,10 @@ describe("invitations, candidatures et journal", () => {
     await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), "invitations/ARZ-AAAA-BBBB")));
   });
 
-  it("le candidat voit sa candidature mais ne peut pas la modifier", async () => {
-    await assertSucceeds(getDoc(doc(db("candidat", "candidat_cercle"), "candidatures/candidat")));
-    await assertFails(updateDoc(doc(db("candidat", "candidat_cercle"), "candidatures/candidat"), { statut: "admise" }));
-    await assertFails(getDoc(doc(db("membre", "membre"), "candidatures/candidat")));
+  it("les candidatures spontanées n'existent plus (invitation seule)", async () => {
+    await assertFails(getDoc(doc(db("ancien", "membre"), "candidatures/ancien")));
+    await assertFails(getDoc(doc(db("sa", "super_admin", true), "candidatures/ancien")));
+    await assertFails(setDoc(doc(db("ancien", "membre"), "candidatures/ancien"), { statut: "soumise" }));
   });
 
   it("le journal d'audit n'est jamais modifiable, même par le super administrateur", async () => {
@@ -138,26 +137,23 @@ describe("vérifications WhatsApp", () => {
   });
 });
 
-describe("opérations du Cercle", () => {
-  it("un membre vérifié voit les opérations PME ouvertes, pas les grands comptes", async () => {
+describe("opérations en vente à terme", () => {
+  it("un partenaire vérifié voit seulement les opérations qui lui sont proposées", async () => {
     await assertSucceeds(getDoc(doc(db("membre", "membre"), "operations/pme")));
     await assertFails(getDoc(doc(db("membre", "membre"), "operations/grand")));
     await assertFails(getDoc(doc(db("membre", "membre"), "operations/fermee")));
-  });
-
-  it("un partenaire voit aussi les opérations Entreprises", async () => {
     await assertSucceeds(getDoc(doc(db("partenaire", "partenaire"), "operations/grand")));
+    await assertFails(getDoc(doc(db("partenaire", "partenaire"), "operations/pme")));
   });
 
-  it("aucune opération pour un compte non validé ou un candidat", async () => {
+  it("aucune opération pour un compte non validé, même s'il est dans la liste", async () => {
     await assertFails(getDoc(doc(db("membre_attente", "membre"), "operations/pme")));
-    await assertFails(getDoc(doc(db("candidat", "candidat_cercle"), "operations/pme")));
   });
 
-  it("l'entreprise voit son opération mais jamais les participations", async () => {
+  it("l'entreprise voit son opération mais jamais les manifestations d'intérêt", async () => {
     await assertSucceeds(getDoc(doc(db("ent", "entreprise"), "operations/pme")));
     await assertSucceeds(getDoc(doc(db("ent", "entreprise"), "operations/pme/evenements/e1")));
-    await assertFails(getDoc(doc(db("ent", "entreprise"), "operations/pme/participations/p1")));
+    await assertFails(getDoc(doc(db("ent", "entreprise"), "operations/pme/interets/membre")));
     await assertFails(getDoc(doc(db("ent2", "entreprise"), "operations/pme")));
   });
 
@@ -167,22 +163,16 @@ describe("opérations du Cercle", () => {
     await assertFails(getDoc(doc(db("autre_notaire", "notaire"), "operations/pme")));
   });
 
-  it("un membre crée une intention de participation conforme, rien de plus", async () => {
-    const f = db("membre", "membre");
-    const ok = { uid: "membre", montant: 1000000, statut: "en_attente_versement", creeLe: serverTimestamp() };
-    await assertSucceeds(setDoc(doc(f, "operations/pme/participations/p2"), ok));
-    await assertFails(setDoc(doc(f, "operations/pme/participations/p3"), { ...ok, statut: "versement_confirme" }));
-    await assertFails(setDoc(doc(f, "operations/pme/participations/p4"), { ...ok, montant: 100 }));
-    await assertFails(setDoc(doc(f, "operations/pme/participations/p5"), { ...ok, montant: 1000000.5 }));
-    await assertFails(setDoc(doc(f, "operations/pme/participations/p6"), { ...ok, uid: "partenaire" }));
-    await assertFails(setDoc(doc(f, "operations/grand/participations/p7"), ok));
-    await assertFails(updateDoc(doc(f, "operations/pme/participations/p1"), { montant: 2000000 }));
-    await assertFails(deleteDoc(doc(f, "operations/pme/participations/p1")));
+  it("un partenaire voit sa manifestation d'intérêt, pas celle des autres, et n'écrit rien lui-même", async () => {
+    await assertSucceeds(getDoc(doc(db("membre", "membre"), "operations/pme/interets/membre")));
+    await assertFails(getDoc(doc(db("partenaire", "partenaire"), "operations/pme/interets/membre")));
+    await assertFails(setDoc(doc(db("membre", "membre"), "operations/pme/interets/membre"), { montantIndicatif: 1, engageant: true }));
+    await assertFails(updateDoc(doc(db("membre", "membre"), "operations/pme"), { majoration: 0 }));
   });
 
-  it("un membre voit sa participation, pas celle des autres", async () => {
-    await assertSucceeds(getDoc(doc(db("membre", "membre"), "operations/pme/participations/p1")));
-    await assertFails(getDoc(doc(db("partenaire", "partenaire"), "operations/pme/participations/p1")));
+  it("l'équipe lit tout, mais n'écrit rien sans passer par le serveur", async () => {
+    await assertSucceeds(getDoc(doc(db("an", "analyste", true), "operations/pme/interets/membre")));
+    await assertFails(updateDoc(doc(db("sa", "super_admin", true), "operations/pme"), { statut: "cloturee" }));
   });
 });
 
@@ -194,5 +184,21 @@ describe("pièces d'identité (Storage)", () => {
     await assertFails(uploadString(ref(proprio, "kyc/membre/script.js"), "x", "raw", { contentType: "text/javascript" }));
     await assertFails(getBytes(ref(contexte("partenaire", "partenaire").storage(), "kyc/membre/recto.jpg")));
     await assertSucceeds(getBytes(ref(contexte("an", "analyste", true).storage(), "kyc/membre/recto.jpg")));
+    // Formats limités : PDF, JPG, PNG.
+    await assertFails(uploadString(ref(proprio, "kyc/membre/photo.gif"), "x", "raw", { contentType: "image/gif" }));
+    await assertSucceeds(uploadString(ref(proprio, "kyc/membre/releve.pdf"), "x", "raw", { contentType: "application/pdf" }));
+  });
+
+  it("documents d'opération : seule l'équipe dépose et lit directement", async () => {
+    const pdf = { contentType: "application/pdf" };
+    await assertSucceeds(uploadString(ref(contexte("sa", "super_admin", true).storage(), "operations/pme/projet.pdf"), "x", "raw", pdf));
+    await assertFails(uploadString(ref(contexte("membre", "membre").storage(), "operations/pme/faux.pdf"), "x", "raw", pdf));
+    await assertFails(uploadString(ref(contexte("ent", "entreprise").storage(), "operations/pme/faux.pdf"), "x", "raw", pdf));
+    await assertFails(getBytes(ref(contexte("ent", "entreprise").storage(), "operations/pme/projet.pdf")));
+    await assertFails(getBytes(ref(contexte("membre", "membre").storage(), "operations/pme/projet.pdf")));
+    // Le notaire dépose ses actes dans son propre dossier.
+    await assertSucceeds(uploadString(ref(contexte("notaire", "notaire").storage(), "notaires/notaire/acte.pdf"), "x", "raw", pdf));
+    await assertFails(uploadString(ref(contexte("notaire", "notaire").storage(), "notaires/autre/acte.pdf"), "x", "raw", pdf));
+    await assertFails(uploadString(ref(contexte("membre", "membre").storage(), "notaires/membre/acte.pdf"), "x", "raw", pdf));
   });
 });
