@@ -12,7 +12,6 @@ import '../models/utilisateur.dart';
 enum Parcours {
   entreprise('entreprise', 'Je suis une entreprise'),
   invitation('invitation', "J'ai un code d'invitation au Cercle"),
-  candidature('candidature', 'Je souhaite rejoindre le Cercle'),
   fournisseur('fournisseur', 'Je suis fournisseur'),
   notaire('notaire', 'Je suis notaire');
 
@@ -31,7 +30,6 @@ enum Parcours {
   /// Pour une invitation, le rôle vient du niveau inscrit sur l'invitation.
   Role? get roleInitial => switch (this) {
         Parcours.entreprise => Role.entreprise,
-        Parcours.candidature => Role.candidatCercle,
         Parcours.fournisseur => Role.fournisseur,
         Parcours.notaire => Role.notaire,
         Parcours.invitation => null,

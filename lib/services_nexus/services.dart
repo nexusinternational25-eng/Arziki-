@@ -145,9 +145,9 @@ const catalogueParDefaut = <OffreService>[
   OffreService(
     id: 'accompagnement-banque',
     famille: FamilleService.montage,
-    titre: 'Accompagnement banque, crédit-bail et marché à financer',
+    titre: 'Accompagnement banque, leasing et marché à financer',
     accroche: 'Vous avez un marché ou un équipement à financer ? On vous accompagne.',
-    description: 'Préparation et présentation de votre dossier auprès des banques et des sociétés de crédit-bail, '
+    description: 'Préparation et présentation de votre dossier auprès des banques et des sociétés de leasing, '
         'ou accompagnement des entreprises qui ont un marché à financer.',
     inclus: ['Montage du dossier', 'Mise en relation', 'Suivi jusqu\'à la décision'],
     delai: 'Selon le dossier',
@@ -200,7 +200,7 @@ const catalogueParDefaut = <OffreService>[
     id: 'carnet',
     famille: FamilleService.carnet,
     titre: 'ARZIKI Carnet',
-    accroche: 'Ventes, stock et crédit client dans votre téléphone.',
+    accroche: 'Ventes, stock et créances clients dans votre téléphone.',
     description: 'Un petit outil de gestion par abonnement pour les commerçants : ventes du jour, stock, dettes '
         'des clients et rappels. Bientôt disponible.',
     inclus: ['Ventes et stock', 'Suivi des clients', 'Rapports simples'],
@@ -222,7 +222,7 @@ class Formation {
 }
 
 const formationsParDefaut = <Formation>[
-  Formation('dossier-credit', 'Préparer son dossier de crédit', 'Les pièces, les chiffres et les arguments qui rassurent une banque.', '1 jour'),
+  Formation('dossier-financement', 'Préparer son dossier de financement bancaire', 'Les pièces, les chiffres et les arguments qui rassurent une banque.', '1 jour'),
   Formation('gestion-pme', 'Gestion financière de la PME', 'Trésorerie, marges, prix de revient : piloter avec des chiffres simples.', '2 jours'),
   Formation('lire-etats', 'Lire ses états financiers', 'Comprendre son bilan et son compte de résultat, repérer les signaux.', '1 jour'),
   Formation('appel-offres', "Répondre à un appel d'offres", 'Constituer un dossier conforme et présenter une offre compétitive.', '1 jour'),
@@ -264,7 +264,7 @@ class SessionFormation {
 }
 
 final sessionsParDefaut = <SessionFormation>[
-  SessionFormation(id: 's1', formationId: 'dossier-credit', date: DateTime(2026, 11, 21), lieu: 'Lomé, Tokoin Wuiti', places: 20, prix: 45000, inscrits: const ['u-ent-btp', 'u-ent-mine']),
+  SessionFormation(id: 's1', formationId: 'dossier-financement', date: DateTime(2026, 11, 21), lieu: 'Lomé, Tokoin Wuiti', places: 20, prix: 45000, inscrits: const ['u-ent-btp', 'u-ent-mine']),
   SessionFormation(id: 's2', formationId: 'gestion-pme', date: DateTime(2026, 12, 3), lieu: 'Lomé, Tokoin Wuiti', places: 16, prix: 75000),
   SessionFormation(id: 's3', formationId: 'appel-offres', date: DateTime(2026, 12, 10), lieu: 'Kara', places: 15, prix: 45000),
   SessionFormation(id: 's4', formationId: 'lire-etats', date: DateTime(2026, 10, 15), lieu: 'Lomé, Tokoin Wuiti', places: 20, prix: 40000, inscrits: const ['u-ent-pharma']),

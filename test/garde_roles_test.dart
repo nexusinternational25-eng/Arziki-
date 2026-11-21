@@ -65,9 +65,8 @@ void main() {
     expect(redirection(session(Role.analyste), Chemins.adminEquipe, console), Chemins.admin);
   });
 
-  test("l'analyste ne gère ni invitations ni candidatures", () {
+  test("l'analyste ne gère pas les invitations", () {
     expect(redirection(session(Role.analyste), Chemins.adminInvitations, console), Chemins.admin);
-    expect(redirection(session(Role.analyste), Chemins.adminCandidatures, console), Chemins.admin);
     expect(redirection(session(Role.analyste), Chemins.adminComptes, console), isNull);
   });
 
@@ -75,14 +74,12 @@ void main() {
     final e = session(Role.membre, statut: StatutCompte.enAttente);
     expect(redirection(e, Chemins.cercle, mobile), Chemins.enAttente);
     expect(redirection(e, Chemins.identite, mobile), isNull);
-    expect(redirection(e, Chemins.candidature, mobile), Chemins.enAttente);
   });
 
-  test('un candidat au Cercle ne voit jamais les opérations', () {
+  test('un ancien compte sans accès ne voit jamais les opérations', () {
     final e = session(Role.candidatCercle, statut: StatutCompte.enAttente);
     expect(redirection(e, Chemins.cercle, mobile), Chemins.enAttente);
-    expect(redirection(e, Chemins.candidature, mobile), isNull);
-    // Même actif par erreur, il ne peut pas ouvrir le Cercle.
+    // Même actif par erreur, il ne peut pas ouvrir l'espace partenaires.
     expect(redirection(session(Role.candidatCercle), Chemins.cercle, mobile), Chemins.enAttente);
   });
 

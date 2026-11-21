@@ -26,8 +26,10 @@ class BaseDemo {
 
   final Map<String, Utilisateur> utilisateurs = {};
   final Map<String, Invitation> invitations = {};
-  final Map<String, Candidature> candidatures = {};
   final List<EntreeAudit> journal = [];
+
+  /// Plafond de partenaires réglé par le super administrateur (section 24.2).
+  int plafondPartenaires = 50;
 
   /// Pièces KYC déposées : uid -> (code de la pièce -> chemin du fichier).
   /// Comme en production, on ne garde que le chemin, jamais l'image elle-même.
@@ -115,19 +117,6 @@ class BaseDemo {
     _ajouter('u-fourn-1', Role.fournisseur, 'Komi', 'Ayivi', telephone: '+22890000041');
     _ajouter('u-fourn-2', Role.fournisseur, 'Akouvi', 'Ahadji', telephone: '+22890000042');
     _ajouter('u-notaire', Role.notaire, 'Maître Kafui', 'Atsu', telephone: '+22890000051');
-
-    // Un candidat au Cercle inscrit seul, en attente de décision.
-    _ajouter('u-candidat-1', Role.candidatCercle, 'Rachid', 'Ouro', telephone: '+22890000061',
-        statut: StatutCompte.enAttente, kyc: StatutKyc.enCours);
-    candidatures['u-candidat-1'] = Candidature(
-      uid: 'u-candidat-1',
-      nomComplet: 'Rachid Ouro',
-      telephone: '+22890000061',
-      niveauSouhaite: NiveauCercle.membre,
-      trancheEnvisagee: '500 000 à 2 000 000 FCFA',
-      commentNousConnu: 'Recommandé par un membre',
-      soumiseLe: DateTime(2026, 10, 28),
-    );
 
     // Une entreprise en attente de validation.
     _ajouter('u-ent-attente', Role.entreprise, 'Delali', 'Kumako', telephone: '+22890000014',

@@ -68,7 +68,7 @@ class CatalogueServices extends ConsumerWidget {
             image: Images.equipe,
             hauteurImage: 120,
             titre: 'Sessions de formation à venir',
-            texte: '${etat.formations.length} formations au catalogue : dossier de crédit, gestion financière, '
+            texte: '${etat.formations.length} formations au catalogue : dossier de financement, gestion financière, '
                 "états financiers, appels d'offres, garanties.",
             badge: BadgeStatut('${etat.sessions.where((s) => s.date.isAfter(DateTime.now())).length} sessions', ton: TonBadge.succes),
             onTap: () => context.push(Chemins.formations),

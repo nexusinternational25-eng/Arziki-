@@ -19,7 +19,8 @@ void main() {
     await tester.tap(find.text('Passer'));
     await tester.pumpAndSettle();
     expect(find.text('Bienvenue sur ARZIKI'), findsOneWidget);
-    expect(find.text('Membre du Cercle'), findsOneWidget);
+    expect(find.text('Espace partenaires financiers (sur invitation)'), findsOneWidget);
+    expect(find.text('Rejoindre le Cercle'), findsNothing);
     expect(find.text('Je veux juste découvrir'), findsOneWidget);
   });
 

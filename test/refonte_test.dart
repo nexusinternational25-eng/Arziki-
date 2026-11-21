@@ -165,7 +165,7 @@ void main() {
           expect(texte.contains(interdit), isFalse, reason: '${f.path} contient « $interdit »');
         }
       }
-      expect(TextesLegaux.versionConditions, '1.0');
+      expect(TextesLegaux.versionConditions, '2.0');
     });
     test('formats des montants et des dates', () {
       expect(fcfa(6000000), '6 000 000 FCFA');

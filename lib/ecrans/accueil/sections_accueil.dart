@@ -17,9 +17,9 @@ import '../../ui/composants.dart';
 const etapesCourtes = [
   (Icons.upload_file_rounded, 'Vous déposez votre commande', 'Bon de commande, devis du fournisseur, vos coûts.'),
   (Icons.fact_check_rounded, 'ARZIKI vérifie', 'Acheteur contacté, prix contrôlés, garanties proposées.'),
-  (Icons.account_balance_rounded, "L'achat est financé", 'Par le fournisseur ou par le Cercle, via le notaire.'),
+  (Icons.account_balance_rounded, 'Vente à terme', "Un partenaire achète la marchandise et vous la revend à l'échéance."),
   (Icons.local_shipping_rounded, 'Vous livrez', 'Chaque étape est suivie dans l\'application.'),
-  (Icons.pie_chart_rounded, 'La marge est partagée', "Après le paiement de l'acheteur, selon le contrat."),
+  (Icons.event_available_rounded, "Paiement à l'échéance", 'Vous réglez le prix de revente convenu, fixé à l\'avance.'),
 ];
 
 /// Section « Comment ça marche », repliable.

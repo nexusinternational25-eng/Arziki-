@@ -26,7 +26,6 @@ class Chemins {
   // Compte
   static const enAttente = '/en-attente';
   static const identite = '/verification-identite';
-  static const candidature = '/candidature';
   static const suspendu = '/compte-suspendu';
   static const accesRefuse = '/acces-refuse';
   static const notifications = '/notifications';
@@ -59,7 +58,6 @@ class Chemins {
   static const admin = '/admin';
   static const adminComptes = '/admin/comptes';
   static const adminInvitations = '/admin/invitations';
-  static const adminCandidatures = '/admin/candidatures';
   static const adminServices = '/admin/services';
   static const adminContenus = '/admin/contenus';
   static const adminEquipe = '/admin/equipe';
@@ -75,13 +73,17 @@ class Chemins {
   static const publicsConsole = {demarrage, connexionAdmin, doubleFacteur};
 
   /// Écrans autorisés à un compte en attente de validation.
-  static const autorisesEnAttente = {enAttente, identite, candidature, notifications, profil, parametres, documents};
+  static const autorisesEnAttente = {enAttente, identite, notifications, profil, parametres, documents};
 }
 
 bool _commencePar(String chemin, String prefixe) => chemin == prefixe || chemin.startsWith('$prefixe/');
 
 /// Contenu public : pages d'information et catalogue des Services (sans commande).
+/// Pages réservées aux partenaires financiers connectés (section 24.2).
+const pagesPartenaires = {'le-cercle', 'conditions-partenaires'};
+
 bool estContenuPublic(String chemin) {
+  if (pagesPartenaires.any((id) => chemin == '${Chemins.infos}/$id')) return false;
   if (_commencePar(chemin, Chemins.infos)) return true;
   if (chemin == Chemins.services || chemin == Chemins.formations) return true;
   return chemin.startsWith('/services/offre/') && !chemin.endsWith('/commander');
@@ -103,7 +105,6 @@ bool roleAutorise(Role role, String chemin) {
     if (!role.accesConsole) return false;
     if (_commencePar(chemin, Chemins.adminEquipe)) return role.peutGererAdmins;
     if (_commencePar(chemin, Chemins.adminInvitations) ||
-        _commencePar(chemin, Chemins.adminCandidatures) ||
         _commencePar(chemin, Chemins.adminJournal) ||
         _commencePar(chemin, Chemins.adminServices) ||
         _commencePar(chemin, Chemins.adminContenus)) {
@@ -115,7 +116,6 @@ bool roleAutorise(Role role, String chemin) {
   if (_commencePar(chemin, Chemins.entreprise)) return role == Role.entreprise;
   if (_commencePar(chemin, Chemins.fournisseur)) return role == Role.fournisseur;
   if (_commencePar(chemin, Chemins.notaire)) return role == Role.notaire;
-  if (_commencePar(chemin, Chemins.candidature)) return role == Role.candidatCercle;
   return true;
 }
 

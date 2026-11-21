@@ -1,5 +1,5 @@
 // Console d'administration : tableau de bord, comptes, investisseurs privés
-// (invitations), candidatures au Cercle, services, contenus, équipe, journal d'audit.
+// (invitations), services, contenus, équipe, journal d'audit.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,7 +43,6 @@ class CadreConsole extends ConsumerWidget {
       const _Entree(Chemins.admin, Icons.dashboard_rounded, 'Tableau de bord'),
       const _Entree(Chemins.adminComptes, Icons.people_alt_rounded, 'Comptes'),
       const _Entree(Chemins.adminInvitations, Icons.vpn_key_rounded, 'Investisseurs privés'),
-      const _Entree(Chemins.adminCandidatures, Icons.how_to_reg_rounded, 'Candidatures au Cercle'),
       const _Entree(Chemins.adminServices, Icons.work_rounded, 'Services'),
       const _Entree(Chemins.adminContenus, Icons.edit_note_rounded, 'Contenus'),
       const _Entree(Chemins.adminEquipe, Icons.admin_panel_settings_rounded, 'Équipe'),
@@ -149,9 +148,9 @@ class TableauDeBordAdmin extends ConsumerWidget {
     final role = ref.watch(sessionProvider).utilisateur!.role;
     final donnees = Future.wait([
       depot.listerComptes(),
-      depot.listerCandidatures(),
       depot.listerInvitations(),
-      depot.tailleDuCercle(),
+      depot.placesOccupees(),
+      depot.plafondPartenaires(),
     ]);
 
     return CadreConsole(
@@ -161,11 +160,10 @@ class TableauDeBordAdmin extends ConsumerWidget {
         future: donnees,
         builder: (context, snap) => _chargement(snap, (d) {
           final comptes = d[0] as List<Utilisateur>;
-          final candidatures = d[1] as List<Candidature>;
-          final invitations = d[2] as List<Invitation>;
-          final taille = d[3] as int;
+          final invitations = d[1] as List<Invitation>;
+          final taille = d[2] as int;
+          final plafond = d[3] as int;
           final aValider = comptes.where((u) => u.statut == StatutCompte.enAttente).length;
-          final candEnAttente = candidatures.where((c) => c.statut == StatutCandidature.soumise).length;
           final invActives = invitations.where((i) => i.statut(DateTime.now()) == 'En attente').length;
 
           final ops = ref.read(operationsProvider).operations;
@@ -189,20 +187,19 @@ class TableauDeBordAdmin extends ConsumerWidget {
 
           return ListView(padding: const EdgeInsets.all(ArzikiEspaces.l), children: [
             const EnTetePage('Tableau de bord', "Ce qui demande votre attention aujourd'hui, et les indicateurs clés d'ARZIKI."),
-            if (taille >= seuilAlerteTailleCercle)
+            if (taille >= plafond * 0.9)
               Padding(
                 padding: const EdgeInsets.only(bottom: ArzikiEspaces.m),
                 child: Encadre(
-                  'Alerte : le Cercle compte $taille personnes. Au-delà de $limiteTailleCercle personnes sans lien '
-                  "juridique entre elles, l'offre risque d'être qualifiée d'appel public à l'épargne (AMF-UMOA). "
-                  'Consultez votre avocat.',
+                  'Alerte : $taille places occupées sur $plafond (partenaires et invitations en cours). '
+                  "Le cercle doit rester privé pour ne pas être qualifié d'appel public à l'épargne. "
+                  'Le plafond ne peut jamais dépasser 99.',
                   type: TypeEncadre.erreur,
                 ),
               ),
             Text('À traiter', style: Theme.of(context).textTheme.titleLarge),
             Wrap(spacing: ArzikiEspaces.m, children: [
               tuile('Comptes à valider', '$aValider', Icons.pending_actions_rounded, Chemins.adminComptes, couleur: ArzikiCouleurs.orange),
-              tuile('Candidatures au Cercle', '$candEnAttente', Icons.how_to_reg_rounded, Chemins.adminCandidatures, couleur: ArzikiCouleurs.orange),
               tuile('Invitations en attente', '$invActives', Icons.vpn_key_rounded, Chemins.adminInvitations),
               tuile('Demandes de service à chiffrer', '$commandesAttente', Icons.request_quote_rounded, Chemins.adminServices, couleur: ArzikiCouleurs.orange),
             ]),
@@ -213,7 +210,7 @@ class TableauDeBordAdmin extends ConsumerWidget {
               tuile('Volume financé', fcfa(volume), Icons.payments_rounded, null),
               tuile('Opérations en retard', '$retards', Icons.warning_amber_rounded, null, couleur: retards > 0 ? ArzikiCouleurs.erreur : ArzikiCouleurs.vert),
               tuile('Marge visée moyenne', '${margeMoy.toStringAsFixed(1).replaceAll('.', ',')} %', Icons.trending_up_rounded, null),
-              tuile('Personnes dans le Cercle', '$taille / $limiteTailleCercle', Icons.groups_rounded, null),
+              tuile('Partenaires et invitations', '$taille / $plafond', Icons.groups_rounded, null),
               tuile('Services : encaissé ce mois', fcfa(services.chiffreAffairesDuMois(DateTime.now())), Icons.account_balance_wallet_rounded, Chemins.adminServices, couleur: ArzikiCouleurs.info),
               tuile('Comptes au total', '${comptes.length}', Icons.people_alt_rounded, Chemins.adminComptes),
             ]),
@@ -599,102 +596,6 @@ class _PageInvitationsState extends ConsumerState<PageInvitations> with _Recharg
         ],
       ),
     );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Candidatures au Cercle (investisseurs inscrits seuls)
-// ---------------------------------------------------------------------------
-
-class PageCandidatures extends ConsumerStatefulWidget {
-  const PageCandidatures({super.key});
-
-  @override
-  ConsumerState<PageCandidatures> createState() => _PageCandidaturesState();
-}
-
-class _PageCandidaturesState extends ConsumerState<PageCandidatures> with _Rechargeable {
-  @override
-  Widget build(BuildContext context) {
-    final acteur = ref.watch(sessionProvider).utilisateur!;
-    final depot = ref.watch(depotComptesProvider);
-    return CadreConsole(
-      chemin: Chemins.adminCandidatures,
-      titre: 'Candidatures au Cercle',
-      corps: FutureBuilder(
-        key: ValueKey(version),
-        future: Future.wait([depot.listerCandidatures(), depot.listerComptes()]),
-        builder: (context, snap) => _chargement(snap, (d) {
-          final candidatures = d[0] as List<Candidature>;
-          final comptes = {for (final u in d[1] as List<Utilisateur>) u.uid: u};
-          return ListView(padding: const EdgeInsets.all(ArzikiEspaces.l), children: [
-            const Encadre(
-              'Personnes qui se sont inscrites seules et demandent à rejoindre le Cercle. Elles ne voient aucune '
-              "opération tant que vous ne les avez pas admises. Vérifiez d'abord leur identité dans « Comptes ».",
-            ),
-            const SizedBox(height: ArzikiEspaces.l),
-            if (candidatures.isEmpty) const Text('Aucune candidature.'),
-            for (final c in candidatures)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(ArzikiEspaces.m),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Expanded(child: Text(c.nomComplet, style: Theme.of(context).textTheme.titleMedium)),
-                      Chip(label: Text(c.statut.libelle)),
-                    ]),
-                    Text('${c.telephone} · déposée le ${dateCourte(c.soumiseLe)}'),
-                    Text('Niveau souhaité : ${c.niveauSouhaite.libelle} · ${c.trancheEnvisagee}'),
-                    Text('Source : ${c.commentNousConnu}'),
-                    Text('Identité : ${comptes[c.uid]?.kycStatut.libelle ?? 'inconnue'}'),
-                    if (c.motif != null) Text('Motif : ${c.motif}'),
-                    if (c.statut == StatutCandidature.soumise) ...[
-                      const SizedBox(height: ArzikiEspaces.m),
-                      Wrap(spacing: ArzikiEspaces.s, runSpacing: ArzikiEspaces.s, children: [
-                        for (final n in NiveauCercle.values)
-                          OutlinedButton(
-                            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
-                            onPressed: () => executer(
-                              () => depot.admettreCandidat(acteur: acteur, uid: c.uid, niveau: n),
-                              '${c.nomComplet} est admis(e) au niveau ${n.libelle}.',
-                            ),
-                            child: Text('Admettre : ${n.libelle}'),
-                          ),
-                        TextButton(
-                          style: TextButton.styleFrom(foregroundColor: ArzikiCouleurs.erreur),
-                          onPressed: () => _refuser(acteur, c),
-                          child: const Text('Ne pas retenir'),
-                        ),
-                      ]),
-                    ],
-                  ]),
-                ),
-              ),
-          ]);
-        }),
-      ),
-    );
-  }
-
-  Future<void> _refuser(Utilisateur acteur, Candidature c) async {
-    final motif = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ne pas retenir la candidature'),
-        content: TextField(controller: motif, decoration: const InputDecoration(labelText: 'Motif (communiqué au candidat)')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmer')),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await executer(
-        () => ref.read(depotComptesProvider).refuserCandidat(acteur: acteur, uid: c.uid, motif: motif.text),
-        'Candidature non retenue.',
-      );
-    }
   }
 }
 

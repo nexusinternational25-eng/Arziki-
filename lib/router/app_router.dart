@@ -55,7 +55,6 @@ final routeurProvider = Provider<GoRouter>((ref) {
       // Compte
       GoRoute(path: Chemins.enAttente, builder: (_, _) => const EcranEnAttente()),
       GoRoute(path: Chemins.identite, builder: (_, _) => const EcranIdentite()),
-      GoRoute(path: Chemins.candidature, builder: (_, _) => const EcranCandidature()),
       GoRoute(path: Chemins.suspendu, builder: (_, _) => const EcranSuspendu()),
       GoRoute(path: Chemins.accesRefuse, builder: (_, _) => const EcranAccesRefuse()),
       GoRoute(path: Chemins.notifications, builder: (_, _) => const EcranNotifications()),
@@ -93,7 +92,6 @@ final routeurProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Chemins.admin, builder: (_, _) => const TableauDeBordAdmin()),
       GoRoute(path: Chemins.adminComptes, builder: (_, _) => const PageComptes()),
       GoRoute(path: Chemins.adminInvitations, builder: (_, _) => const PageInvitations()),
-      GoRoute(path: Chemins.adminCandidatures, builder: (_, _) => const PageCandidatures()),
       GoRoute(path: Chemins.adminServices, builder: (_, _) => const PageServicesAdmin()),
       GoRoute(path: Chemins.adminContenus, builder: (_, _) => const PageContenusAdmin()),
       GoRoute(path: Chemins.adminEquipe, builder: (_, _) => const PageEquipe()),

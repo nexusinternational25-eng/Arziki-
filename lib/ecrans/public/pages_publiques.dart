@@ -36,27 +36,17 @@ class EcranDecouvrir extends StatelessWidget {
             image: Images.marche,
             hauteur: 260,
             titre: 'Ta commande. Notre financement.',
-            sousTitre: 'La Commande Financée au Togo : une commande ferme, un financement encadré par notaire.',
+            sousTitre: 'Financez vos commandes, préparez vos dossiers. Contrats passés devant notaire.',
           ),
         ),
         const SizedBox(height: ArzikiEspaces.m),
         const Encadre(
-          'Vous visitez ARZIKI sans compte. Les opérations du Cercle sont réservées aux membres admis et vérifiés.',
+          'Vous visitez ARZIKI sans compte. Créez votre compte entreprise pour soumettre une commande ou commander un service.',
           icone: Icons.visibility_rounded,
         ),
         const SizedBox(height: ArzikiEspaces.s),
         const Apparition(ordre: 1, child: SectionCommentCaMarche(ouverte: true)),
         const CarrouselServices(afficherPrix: false),
-        const TitreSection('Le Cercle Arziki', explication: 'Un cercle privé, sur invitation ou après admission.'),
-        CarteImage(
-          image: Images.reunionInvestisseurs,
-          titre: 'Trois niveaux : Membre, Partenaire, Partenaire stratégique',
-          texte: 'Des membres et des partenaires choisissent les opérations commerciales auxquelles ils participent, '
-              'avec un avertissement clair sur les risques.',
-          onTap: () => context.push(Chemins.info(PagesId.cercle)),
-          pied: Text('Découvrir le Cercle', style: t.labelLarge?.copyWith(color: ArzikiCouleurs.vert)),
-        ),
-        const SizedBox(height: ArzikiEspaces.s),
         const BlocConfiance(),
         const TitreSection("À propos d'ARZIKI"),
         CarteArziki(
@@ -100,7 +90,9 @@ class PageInfo extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final page = ref.watch(contenusProvider).pages[id];
+    final u = ref.watch(sessionProvider).utilisateur;
+    final reservee = pagesPartenaires.contains(id) && !(u != null && (u.role.estMembreDuCercle || u.role.accesConsole));
+    final page = reservee ? null : ref.watch(contenusProvider).pages[id];
     final t = Theme.of(context).textTheme;
     if (page == null) {
       return Scaffold(
@@ -160,7 +152,7 @@ class PageInfo extends ConsumerWidget {
       case PagesId.commentCaMarche:
         return const [SizedBox(height: ArzikiEspaces.m), SchemaCommandeFinancee()];
       case PagesId.cercle:
-        return const [SizedBox(height: ArzikiEspaces.m), NiveauxCercle(), SizedBox(height: ArzikiEspaces.s), AvertissementRisque()];
+        return const [SizedBox(height: ArzikiEspaces.m), AvertissementRisque()];
       case PagesId.securite:
         return const [SizedBox(height: ArzikiEspaces.m), TableauGaranties()];
       case PagesId.aPropos:
@@ -178,23 +170,7 @@ class PageInfo extends ConsumerWidget {
 
   /// Éléments propres à certaines pages, placés après les sections.
   List<Widget> _apres(BuildContext context, WidgetRef ref, String id) {
-    final u = ref.watch(sessionProvider).utilisateur;
     switch (id) {
-      case PagesId.cercle:
-        if (u != null && u.role.estMembreDuCercle) return const [];
-        return [
-          const SizedBox(height: ArzikiEspaces.s),
-          FilledButton.icon(
-            onPressed: () => context.push(Chemins.invitation),
-            icon: const Icon(Icons.vpn_key_rounded),
-            label: const Text("J'ai un code d'invitation"),
-          ),
-          const SizedBox(height: ArzikiEspaces.s),
-          OutlinedButton(
-            onPressed: () => context.push('${Chemins.inscription}?parcours=candidature'),
-            child: const Text('Présenter ma candidature'),
-          ),
-        ];
       case PagesId.aide:
         return [
           const SizedBox(height: ArzikiEspaces.s),

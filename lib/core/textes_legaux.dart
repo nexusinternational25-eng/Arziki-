@@ -1,35 +1,44 @@
 // Textes légaux et vocabulaire réglementé (CLAUDE.md, sections 1 et 14).
-// Version 1.0 publiée le 1er novembre 2026 (décision du propriétaire).
+// Version 2.0 publiée le 21 novembre 2026 : vente à terme, invitation seule (section 24).
 
 class TextesLegaux {
   TextesLegaux._();
 
   /// Version des conditions d'utilisation et de la politique de confidentialité.
   /// Toute modification du texte impose d'augmenter ce numéro.
-  static const String versionConditions = '1.0';
+  static const String versionConditions = '2.0';
 
-  /// Avertissement de risque, affiché sur chaque fiche d'opération et avant chaque participation.
+  /// Avertissement imposé (règle R8), affiché dans l'application et sur arziki.html.
+  static const String avertissementR8 =
+      "ARZIKI ne fait ni crédit ni collecte d'épargne. "
+      "Chaque opération fait l'objet de contrats passés devant notaire. "
+      'Toute participation comporte un risque de perte.';
+
+  /// Avertissement de risque, affiché sur chaque fiche d'opération proposée à un partenaire.
   static const String avertissementRisque =
-      'ARZIKI propose des participations à des opérations commerciales. '
-      'Ce ne sont ni des prêts ni des placements garantis. '
-      'Vous pouvez perdre tout ou partie de votre mise. '
-      'Les marges indiquées sont des objectifs, pas des promesses. '
-      "Ne participez qu'avec des sommes dont vous n'avez pas besoin à court terme.";
+      '$avertissementR8 '
+      "La manifestation d'intérêt n'engage pas : seule la signature devant notaire engage. "
+      "Ne vous engagez qu'avec des sommes dont vous n'avez pas besoin à court terme.";
 
-  /// Règle des espèces (règle légale n° 4).
+  /// Mention affichée près du bouton « Je suis intéressé » (règle R4).
+  static const String interetNonEngageant =
+      "Cette manifestation d'intérêt ne vous engage pas. Seule la signature devant notaire vous engage.";
+
+  /// Règle des espèces (règle R6) : aucune option de paiement en espèces.
   static const String regleEspeces =
-      'Aucun versement en espèces au-delà de 5 000 000 FCFA : '
-      'les participations se font par virement ou mobile money, avec justificatif.';
+      'Aucun paiement en espèces : virement, mobile money ou carte, avec justificatif.';
 
-  /// Rappel affiché aux candidats : le Cercle est privé.
-  static const String cerclePrive =
-      'Le Cercle Arziki est un cercle privé. Votre inscription ne vous donne pas accès aux opérations : '
-      'un administrateur examine chaque candidature et décide seul de l\'admission, '
-      'après vérification de votre identité et de l\'origine de vos fonds.';
-
-  /// Expressions interdites dans tous les textes de l'application (règle légale n° 2).
+  /// Expressions interdites dans tous les textes de l'application (règles R2 et R4, section 24).
   /// Un test automatique vérifie qu'aucune n'apparaît dans les textes affichés.
+  /// Exceptions voulues : les formules juridiques négatives (« ni crédit ni collecte d'épargne »,
+  /// « appel public à l'épargne ») et « manifestation d'intérêt ».
   static final List<RegExp> expressionsInterdites = [
+    RegExp(r'(?<!ni )\bcr[ée]dit', caseSensitive: false),
+    RegExp(r"(?<!collecte d'|appel public à l')[ée]pargne", caseSensitive: false),
+    RegExp(r'int[ée]r[êe]ts\b', caseSensitive: false),
+    RegExp(r'd[ée]p[ôo]ts?\b', caseSensitive: false),
+    RegExp(r'\bplacements?\b', caseSensitive: false),
+    RegExp(r'encadr[ée]+s?\s+par\s+(un\s+|le\s+)?notaire|encadrement\s+notarial|garantie?s?\s+par\s+le\s+notaire', caseSensitive: false),
     RegExp(r'\bgaranti\b', caseSensitive: false),
     RegExp(r'(rendement|croissance|gain|placement|profit|revenu|marge)s?\s+garanti', caseSensitive: false),
     RegExp(r'sans\s+risque', caseSensitive: false),

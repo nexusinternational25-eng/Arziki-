@@ -97,15 +97,15 @@ const _pages = [
   ),
   _PagePresentation(
     Images.cercleApplication,
-    "Un Cercle privé d'investisseurs",
-    'Des membres et des partenaires choisissent les opérations auxquelles ils participent. '
-        "L'argent ne transite jamais par l'application.",
-    Icons.groups_rounded,
+    'Des dossiers solides, clés en main',
+    'Dossier clés en main, business plan, états financiers, formation : '
+        'des services opérés par NEXUS International.',
+    Icons.folder_special_rounded,
   ),
   _PagePresentation(
     Images.cercleNotaire,
-    'Chaque opération encadrée par notaire',
-    'Actes signés, fonds en séquestre, garanties proportionnées au montant : un cadre clair à chaque étape.',
+    'Des contrats passés devant notaire',
+    "Vente à terme, garanties adaptées au montant : l'argent ne transite jamais par l'application.",
     Icons.gavel_rounded,
   ),
   _PagePresentation(
@@ -282,10 +282,6 @@ class EcranChoix extends ConsumerWidget {
     final profils = [
       _Profil(Images.entrepreneurEntrepot, 'Entreprise', "Faire financer l'achat d'une commande ferme.",
           Icons.storefront_rounded, (c) => inscription(c, Parcours.entreprise)),
-      _Profil(Images.cercleApplication, 'Membre du Cercle', "J'ai reçu un code d'invitation personnel.",
-          Icons.vpn_key_rounded, (c) => c.push(Chemins.invitation)),
-      _Profil(Images.cercleDiaspora, 'Rejoindre le Cercle', 'Créer mon compte et présenter ma candidature.',
-          Icons.group_add_rounded, (c) => inscription(c, Parcours.candidature)),
       _Profil(Images.fournisseurPme, 'Fournisseur', 'Recevoir les bons de commande ARZIKI.',
           Icons.local_shipping_rounded, (c) => inscription(c, Parcours.fournisseur)),
       _Profil(Images.cercleDossier, 'Notaire', 'Suivre les opérations qui me sont confiées.',
@@ -344,6 +340,11 @@ class EcranChoix extends ConsumerWidget {
                       label: const Text("J'ai déjà un compte : me connecter"),
                     ),
                     const SizedBox(height: ArzikiEspaces.s),
+                    // Section 24.2 : accès discret, sans argument commercial.
+                    TextButton(
+                      onPressed: () => context.push(Chemins.invitation),
+                      child: const Text('Espace partenaires financiers (sur invitation)'),
+                    ),
                     TextButton.icon(
                       onPressed: () => context.push(Chemins.connexionAdmin),
                       icon: const Icon(Icons.admin_panel_settings_rounded),

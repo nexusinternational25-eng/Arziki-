@@ -39,7 +39,9 @@ class MenuLateral extends ConsumerWidget {
       _EntreeMenu(Icons.route_rounded, 'Comment ça marche', Chemins.info(PagesId.commentCaMarche)),
       _EntreeMenu(Icons.info_rounded, "À propos d'ARZIKI", Chemins.info(PagesId.aPropos)),
       const _EntreeMenu(Icons.work_rounded, 'Nos services', Chemins.services),
-      _EntreeMenu(Icons.groups_rounded, 'Le Cercle Arziki', Chemins.info(PagesId.cercle)),
+      // Section 24.2 : l'espace partenaires n'apparaît qu'aux partenaires connectés.
+      if (u != null && u.role.estMembreDuCercle)
+        _EntreeMenu(Icons.groups_rounded, 'Espace partenaires', Chemins.info(PagesId.cercle)),
       _EntreeMenu(Icons.verified_user_rounded, 'Sécurité et notaire', Chemins.info(PagesId.securite)),
       const _EntreeMenu(Icons.quiz_rounded, 'Questions fréquentes', Chemins.faq),
       _EntreeMenu(Icons.support_agent_rounded, "Centre d'aide", Chemins.info(PagesId.aide)),
@@ -48,7 +50,9 @@ class MenuLateral extends ConsumerWidget {
     final legales = [
       _EntreeMenu(Icons.description_rounded, "Conditions d'utilisation", Chemins.info(PagesId.cgu)),
       _EntreeMenu(Icons.privacy_tip_rounded, 'Politique de confidentialité', Chemins.info(PagesId.confidentialite)),
-      _EntreeMenu(Icons.warning_amber_rounded, 'Avertissement sur les risques', Chemins.info(PagesId.risques)),
+      _EntreeMenu(Icons.warning_amber_rounded, 'Avertissement', Chemins.info(PagesId.risques)),
+      if (u != null && u.role.estMembreDuCercle)
+        _EntreeMenu(Icons.handshake_rounded, 'Conditions des partenaires', Chemins.info(PagesId.cguPartenaires)),
     ];
 
     void aller(String chemin) {

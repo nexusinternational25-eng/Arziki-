@@ -5,6 +5,7 @@ import '../core/kyc.dart';
 import '../core/roles.dart';
 import '../models/acces.dart';
 import '../models/utilisateur.dart';
+import '../operations/vente_a_terme.dart';
 import 'base_demo.dart';
 
 class DepotComptesDemo implements DepotComptes {
@@ -37,18 +38,18 @@ class DepotComptesDemo implements DepotComptes {
       base.invitations.values.toList()..sort((a, b) => b.creeLe.compareTo(a.creeLe));
 
   @override
-  Future<List<Candidature>> listerCandidatures() async =>
-      base.candidatures.values.toList()..sort((a, b) => b.soumiseLe.compareTo(a.soumiseLe));
-
-  @override
   Future<List<EntreeAudit>> lireJournal() async => base.journal.reversed.toList();
 
   @override
-  Future<Candidature?> candidatureDe(String uid) async => base.candidatures[uid];
+  Future<int> placesOccupees() async {
+    final maintenant = base.maintenant();
+    final comptes = base.utilisateurs.values.where((u) => u.role.estMembreDuCercle && u.statut != StatutCompte.suspendu).length;
+    final invitations = base.invitations.values.where((i) => i.statut(maintenant) == 'En attente').length;
+    return comptes + invitations;
+  }
 
   @override
-  Future<int> tailleDuCercle() async =>
-      base.utilisateurs.values.where((u) => u.role.estMembreDuCercle && u.statut != StatutCompte.suspendu).length;
+  Future<int> plafondPartenaires() async => base.plafondPartenaires;
 
   // ----- Invitations -----
 
@@ -71,6 +72,12 @@ class DepotComptesDemo implements DepotComptes {
     if (telephone.length < 10) throw const ErreurAcces('Numéro de téléphone invalide.');
     if (base.parTelephone(telephone) != null) {
       throw const ErreurAcces('Ce numéro a déjà un compte ARZIKI.');
+    }
+    // Plafond de partenaires (section 24.2).
+    try {
+      verifierPlaceDisponible(await placesOccupees(), base.plafondPartenaires);
+    } on ErreurVente catch (e) {
+      throw ErreurAcces(e.message);
     }
     String code;
     do {
@@ -125,85 +132,6 @@ class DepotComptesDemo implements DepotComptes {
     return utilisee;
   }
 
-  // ----- Candidatures -----
-
-  @override
-  Future<Candidature> deposerCandidature({
-    required Utilisateur candidat,
-    required String prenom,
-    required String nom,
-    required NiveauCercle niveauSouhaite,
-    required String trancheEnvisagee,
-    required String commentNousConnu,
-  }) async {
-    if (candidat.role != Role.candidatCercle) {
-      throw const ErreurAcces('Seul un candidat au Cercle peut déposer une candidature.');
-    }
-    if (prenom.trim().isEmpty || nom.trim().isEmpty) {
-      throw const ErreurAcces('Indiquez votre prénom et votre nom.');
-    }
-    final existante = base.candidatures[candidat.uid];
-    if (existante != null && existante.statut == StatutCandidature.soumise) {
-      throw const ErreurAcces('Votre candidature est déjà en cours d\'examen.');
-    }
-    final profil = _compte(candidat.uid).copier(prenom: prenom.trim(), nom: nom.trim());
-    _enregistrer(profil);
-    final c = Candidature(
-      uid: candidat.uid,
-      nomComplet: profil.nomComplet,
-      telephone: candidat.telephone ?? '',
-      niveauSouhaite: niveauSouhaite,
-      trancheEnvisagee: trancheEnvisagee,
-      commentNousConnu: commentNousConnu,
-      soumiseLe: base.maintenant(),
-    );
-    base.candidatures[candidat.uid] = c;
-    base.auditer(candidat.uid, 'deposer_candidature', 'candidatures/${candidat.uid}',
-        apres: niveauSouhaite.libelle);
-    return c;
-  }
-
-  @override
-  Future<void> admettreCandidat({
-    required Utilisateur acteur,
-    required String uid,
-    required NiveauCercle niveau,
-  }) async {
-    ReglesAcces.exigerValidateur(acteur);
-    final c = base.candidatures[uid];
-    if (c == null || c.statut != StatutCandidature.soumise) {
-      throw const ErreurAcces('Aucune candidature en attente pour ce compte.');
-    }
-    if (await tailleDuCercle() >= limiteTailleCercle) {
-      throw const ErreurAcces(
-          'Le Cercle a atteint sa taille maximale. Consultez votre avocat avant toute nouvelle admission.');
-    }
-    final u = _compte(uid);
-    base.candidatures[uid] = c.decider(statut: StatutCandidature.admise, par: acteur.uid, le: base.maintenant());
-    // Le compte devient actif seulement si l'identité est déjà vérifiée.
-    final statut = u.kycStatut == StatutKyc.valide ? StatutCompte.actif : StatutCompte.enAttente;
-    _enregistrer(u.copier(role: niveau.role, statut: statut));
-    base.auditer(acteur.uid, 'admettre_candidat', 'users/$uid',
-        avant: u.role.code, apres: niveau.role.code);
-  }
-
-  @override
-  Future<void> refuserCandidat({
-    required Utilisateur acteur,
-    required String uid,
-    required String motif,
-  }) async {
-    ReglesAcces.exigerValidateur(acteur);
-    if (motif.trim().isEmpty) throw const ErreurAcces('Indiquez un motif.');
-    final c = base.candidatures[uid];
-    if (c == null || c.statut != StatutCandidature.soumise) {
-      throw const ErreurAcces('Aucune candidature en attente pour ce compte.');
-    }
-    base.candidatures[uid] =
-        c.decider(statut: StatutCandidature.refusee, par: acteur.uid, le: base.maintenant(), motif: motif.trim());
-    base.auditer(acteur.uid, 'refuser_candidat', 'candidatures/$uid', apres: motif.trim());
-  }
-
   // ----- Vérification d'identité -----
 
   @override
@@ -231,7 +159,7 @@ class DepotComptesDemo implements DepotComptes {
   Future<void> validerKyc({required Utilisateur acteur, required String uid}) async {
     ReglesAcces.exigerValidateur(acteur);
     final u = _compte(uid);
-    // Un candidat reste en attente tant qu'il n'est pas admis dans le Cercle.
+    // Un compte sans rôle d'accès (ancien candidat) reste en attente.
     final statut = u.role == Role.candidatCercle ? StatutCompte.enAttente : StatutCompte.actif;
     _enregistrer(u.copier(kycStatut: StatutKyc.valide, statut: statut));
     base.auditer(acteur.uid, 'valider_kyc', 'users/$uid', avant: u.kycStatut.code, apres: StatutKyc.valide.code);

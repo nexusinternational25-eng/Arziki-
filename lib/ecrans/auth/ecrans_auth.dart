@@ -261,7 +261,6 @@ class _EcranInscriptionState extends ConsumerState<EcranInscription> {
         const SizedBox(height: ArzikiEspaces.s),
         if (widget.nomInvite != null)
           Encadre('Invitation reconnue au nom de ${widget.nomInvite}.', icone: Icons.verified_outlined),
-        if (p == Parcours.candidature) const Encadre(TextesLegaux.cerclePrive, type: TypeEncadre.alerte),
         const SizedBox(height: ArzikiEspaces.l),
         ChampTelephone(
           pays: _pays,
@@ -349,7 +348,7 @@ class _EcranConnexionState extends ConsumerState<EcranConnexion> {
           const SizedBox(height: ArzikiEspaces.s),
           const Encadre(
             'Démonstration : 90 00 00 21 (membre), 90 00 00 31 (partenaire), 90 00 00 11 (entreprise), '
-            '90 00 00 41 (fournisseur), 90 00 00 51 (notaire), 90 00 00 61 (candidat).',
+            '90 00 00 41 (fournisseur), 90 00 00 51 (notaire).',
           ),
         ],
         const SizedBox(height: ArzikiEspaces.l),

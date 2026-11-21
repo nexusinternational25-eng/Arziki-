@@ -1,9 +1,8 @@
-// Gestion des comptes et des accès : invitations, candidatures au Cercle,
-// validation, rôles, équipe interne.
+// Gestion des comptes et des accès : invitations (seule porte d'entrée des
+// partenaires financiers, section 24.2), validation, rôles, équipe interne.
 //
 // Chaque méthode correspond à une Cloud Function (CLAUDE.md, section 13) :
-// creerInvitation, annulerInvitation, verifierInvitation, deposerCandidature,
-// deciderCandidature, validerKyc, changerStatutCompte, attribuerRole,
+// creerInvitation, annulerInvitation, verifierInvitation, validerKyc, changerStatutCompte, attribuerRole,
 // creerCompteEquipe, signalerAccesRefuse.
 // En production, c'est le serveur qui vérifie les droits ; ici, la version
 // de démonstration applique exactement les mêmes règles.
@@ -20,11 +19,9 @@ class ErreurAcces implements Exception {
   String toString() => message;
 }
 
-/// Seuil d'alerte sur la taille du Cercle. Au-delà de 100 personnes sans lien
-/// juridique entre elles, une offre peut être qualifiée d'appel public à l'épargne
-/// dans l'UMOA (visa de l'AMF-UMOA). Valeur à confirmer par l'avocat.
-const int seuilAlerteTailleCercle = 90;
-const int limiteTailleCercle = 100;
+/// Plafond de partenaires financiers (section 24.2) : réglé par le super
+/// administrateur, 50 par défaut, jamais plus de 99 (voir vente_a_terme.dart).
+/// On compte les partenaires actifs ou en attente et les invitations encore valables.
 
 abstract class DepotComptes {
   /// Profil d'une personne (la sienne, ou n'importe laquelle pour l'équipe).
@@ -33,10 +30,12 @@ abstract class DepotComptes {
   // ----- Lecture (console) -----
   Future<List<Utilisateur>> listerComptes();
   Future<List<Invitation>> listerInvitations();
-  Future<List<Candidature>> listerCandidatures();
   Future<List<EntreeAudit>> lireJournal();
-  Future<Candidature?> candidatureDe(String uid);
-  Future<int> tailleDuCercle();
+  /// Places occupées : partenaires actifs ou en attente, et invitations encore valables.
+  Future<int> placesOccupees();
+
+  /// Plafond réglé par le super administrateur (50 par défaut, 99 au maximum).
+  Future<int> plafondPartenaires();
 
   // ----- Investisseurs privés : invitation par l'administrateur -----
   Future<Invitation> creerInvitation({
@@ -51,27 +50,6 @@ abstract class DepotComptes {
 
   /// Vérifie qu'un code est utilisable par ce numéro (avant l'inscription).
   Future<Invitation> verifierInvitation({required String code, required String telephone});
-
-  // ----- Investisseurs inscrits seuls : candidature -----
-  /// Enregistre aussi le prénom et le nom dans le profil du candidat.
-  Future<Candidature> deposerCandidature({
-    required Utilisateur candidat,
-    required String prenom,
-    required String nom,
-    required NiveauCercle niveauSouhaite,
-    required String trancheEnvisagee,
-    required String commentNousConnu,
-  });
-  Future<void> admettreCandidat({
-    required Utilisateur acteur,
-    required String uid,
-    required NiveauCercle niveau,
-  });
-  Future<void> refuserCandidat({
-    required Utilisateur acteur,
-    required String uid,
-    required String motif,
-  });
 
   // ----- Vérification d'identité (côté utilisateur) -----
   /// Enregistre les pièces déposées (chemins Cloud Storage) et passe le KYC à en_cours.

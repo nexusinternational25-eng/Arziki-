@@ -145,52 +145,31 @@ void main() {
     });
   });
 
-  group('Investisseur inscrit seul : candidature', () {
-    test('il reste candidat, sans accès, jusqu\'à son admission', () async {
-      final c = await inscrire(Parcours.candidature, '+22891000000');
-      expect(c.role, Role.candidatCercle);
-      expect(c.role.estMembreDuCercle, isFalse);
-
-      await comptes.deposerCandidature(
-          candidat: c,
-          prenom: 'Yawa',
-          nom: 'Ekué',
-          niveauSouhaite: NiveauCercle.membre,
-          trancheEnvisagee: '500 000 à 2 000 000 FCFA',
-          commentNousConnu: 'Autre');
-      expect(u(c.uid).nomComplet, 'Yawa Ekué');
-
-      // L'identité vérifiée ne suffit pas : il faut l'admission.
-      await comptes.validerKyc(acteur: admin(), uid: c.uid);
-      expect(u(c.uid).statut, StatutCompte.enAttente);
-      expect(u(c.uid).role, Role.candidatCercle);
-
-      await comptes.admettreCandidat(acteur: admin(), uid: c.uid, niveau: NiveauCercle.membre);
-      expect(u(c.uid).role, Role.membre);
-      expect(u(c.uid).statut, StatutCompte.actif);
-      expect(base.candidatures[c.uid]!.statut, StatutCandidature.admise);
+  group('Partenaires financiers : invitation seule (section 24.2)', () {
+    test('plus de parcours de candidature spontanée', () {
+      expect(Parcours.values.map((p) => p.code), isNot(contains('candidature')));
     });
 
-    test('admis avant la vérification d\'identité : reste en attente', () async {
-      await comptes.admettreCandidat(acteur: admin(), uid: 'u-candidat-1', niveau: NiveauCercle.membre);
-      expect(u('u-candidat-1').role, Role.membre);
-      expect(u('u-candidat-1').statut, StatutCompte.enAttente);
-    });
-
-    test('un refus exige un motif', () async {
-      expect(() => comptes.refuserCandidat(acteur: admin(), uid: 'u-candidat-1', motif: ' '),
-          throwsA(isA<ErreurAcces>()));
-      await comptes.refuserCandidat(acteur: admin(), uid: 'u-candidat-1', motif: 'Origine des fonds non justifiée');
-      expect(base.candidatures['u-candidat-1']!.statut, StatutCandidature.refusee);
-    });
-
-    test('le Cercle ne dépasse pas la limite de 100 personnes', () async {
-      for (var i = 0; i < limiteTailleCercle; i++) {
+    test('plafond de 50 par défaut : la 51e place est refusée', () async {
+      // Le jeu de démonstration compte déjà des partenaires et des invitations.
+      final occupees = await comptes.placesOccupees();
+      for (var i = 0; i < 50 - occupees; i++) {
         base.utilisateurs['m$i'] =
             const Utilisateur(uid: 'x', role: Role.membre, statut: StatutCompte.actif, kycStatut: StatutKyc.valide);
       }
-      expect(() => comptes.admettreCandidat(acteur: admin(), uid: 'u-candidat-1', niveau: NiveauCercle.membre),
-          throwsA(isA<ErreurAcces>()));
+      expect(await comptes.placesOccupees(), 50);
+      expect(
+        () => comptes.creerInvitation(
+            acteur: superAdmin(), pourNom: 'Kossi Agbo', pourTelephone: '+22891555555', niveau: NiveauCercle.membre),
+        throwsA(isA<ErreurAcces>()),
+      );
+    });
+
+    test('une invitation en cours occupe une place', () async {
+      final avant = await comptes.placesOccupees();
+      await comptes.creerInvitation(
+          acteur: superAdmin(), pourNom: 'Kossi Agbo', pourTelephone: '+22891555555', niveau: NiveauCercle.membre);
+      expect(await comptes.placesOccupees(), avant + 1);
     });
   });
 

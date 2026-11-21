@@ -8,6 +8,7 @@ import '../config/region.dart';
 import '../core/roles.dart';
 import '../models/acces.dart';
 import '../models/utilisateur.dart';
+import '../operations/vente_a_terme.dart';
 import 'depot_comptes.dart';
 
 DateTime? _date(Object? v) => v is Timestamp ? v.toDate() : null;
@@ -84,33 +85,6 @@ class DepotComptesFirebase implements DepotComptes {
     ];
   }
 
-  Candidature _candidature(Map<String, dynamic> d) => Candidature(
-        uid: d['uid'] as String,
-        nomComplet: d['nomComplet'] as String? ?? '',
-        telephone: d['telephone'] as String? ?? '',
-        niveauSouhaite: NiveauCercle.depuisCode(d['niveauSouhaite'] as String?) ?? NiveauCercle.membre,
-        trancheEnvisagee: d['trancheEnvisagee'] as String? ?? '',
-        commentNousConnu: d['commentNousConnu'] as String? ?? '',
-        soumiseLe: _date(d['soumiseLe']) ?? DateTime.now(),
-        statut: StatutCandidature.values.firstWhere((s) => s.code == d['statut'],
-            orElse: () => StatutCandidature.soumise),
-        decidePar: d['decidePar'] as String?,
-        decideLe: _date(d['decideLe']),
-        motif: d['motif'] as String?,
-      );
-
-  @override
-  Future<List<Candidature>> listerCandidatures() async {
-    final q = await _db.collection('candidatures').orderBy('soumiseLe', descending: true).limit(200).get();
-    return [for (final d in q.docs) _candidature(d.data())];
-  }
-
-  @override
-  Future<Candidature?> candidatureDe(String uid) async {
-    final d = await _db.doc('candidatures/$uid').get();
-    return d.exists ? _candidature(d.data()!) : null;
-  }
-
   @override
   Future<List<EntreeAudit>> lireJournal() async {
     final q = await _db.collection('audit').orderBy('date', descending: true).limit(300).get();
@@ -129,14 +103,22 @@ class DepotComptesFirebase implements DepotComptes {
   }
 
   @override
-  Future<int> tailleDuCercle() async {
+  Future<int> placesOccupees() async {
     final r = await _db
         .collection('users')
         .where('role', whereIn: [for (final n in NiveauCercle.values) n.code])
         .where('statut', whereIn: ['actif', 'en_attente'])
         .count()
         .get();
-    return r.count ?? 0;
+    final maintenant = DateTime.now();
+    final invitations = (await listerInvitations()).where((i) => i.statut(maintenant) == 'En attente').length;
+    return (r.count ?? 0) + invitations;
+  }
+
+  @override
+  Future<int> plafondPartenaires() async {
+    final d = await _db.doc('parametres/global').get();
+    return (d.data()?['plafondPartenaires'] as int?) ?? plafondPartenairesDefaut;
   }
 
   // ----- Écritures : toujours par une Cloud Function -----
@@ -191,33 +173,6 @@ class DepotComptesFirebase implements DepotComptes {
       expireLe: DateTime.now(),
     );
   }
-
-  @override
-  Future<Candidature> deposerCandidature({
-    required Utilisateur candidat,
-    required String prenom,
-    required String nom,
-    required NiveauCercle niveauSouhaite,
-    required String trancheEnvisagee,
-    required String commentNousConnu,
-  }) async {
-    await _appeler('deposerCandidature', {
-      'prenom': prenom,
-      'nom': nom,
-      'niveauSouhaite': niveauSouhaite.code,
-      'trancheEnvisagee': trancheEnvisagee,
-      'commentNousConnu': commentNousConnu,
-    });
-    return (await candidatureDe(candidat.uid))!;
-  }
-
-  @override
-  Future<void> admettreCandidat({required Utilisateur acteur, required String uid, required NiveauCercle niveau}) =>
-      _appeler('deciderCandidature', {'uid': uid, 'decision': 'admettre', 'niveau': niveau.code});
-
-  @override
-  Future<void> refuserCandidat({required Utilisateur acteur, required String uid, required String motif}) =>
-      _appeler('deciderCandidature', {'uid': uid, 'decision': 'refuser', 'motif': motif});
 
   @override
   Future<Utilisateur> soumettreKyc({

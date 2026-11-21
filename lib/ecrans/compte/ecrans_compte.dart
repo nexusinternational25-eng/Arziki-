@@ -1,5 +1,5 @@
 // Écrans liés au statut du compte : en attente, vérification d'identité,
-// candidature au Cercle, compte suspendu, accès refusé.
+// compte suspendu, accès refusé.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,8 +11,6 @@ import '../../config/app_config.dart';
 import '../../core/images.dart';
 import '../../core/kyc.dart';
 import '../../core/roles.dart';
-import '../../core/textes_legaux.dart';
-import '../../models/acces.dart';
 import '../../router/garde_roles.dart';
 import '../../theme/arziki_theme.dart';
 import '../../ui/composants.dart';
@@ -65,7 +63,6 @@ class EcranEnAttente extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final u = ref.watch(sessionProvider).utilisateur!;
-    final candidat = u.role == Role.candidatCercle;
     final kycFait = u.kycStatut == StatutKyc.enCours || u.kycStatut == StatutKyc.valide;
 
     final t = Theme.of(context).textTheme;
@@ -75,7 +72,7 @@ class EcranEnAttente extends ConsumerWidget {
       body: Colonne(children: [
         Apparition(
           child: EnTeteImage(
-            image: candidat ? Images.cercleDiaspora : Images.dirigeanteSignature,
+            image: Images.dirigeanteSignature,
             hauteur: 190,
             titre: u.prenom.isEmpty ? 'Bienvenue sur ARZIKI' : 'Bienvenue, ${u.prenom}',
             sousTitre: '${u.role.libelle} · compte en cours de vérification',
@@ -85,9 +82,7 @@ class EcranEnAttente extends ConsumerWidget {
         Text('Plus que quelques étapes', style: t.titleLarge),
         const SizedBox(height: ArzikiEspaces.xs),
         Text(
-          candidat
-              ? "Votre identité est vérifiée par notre équipe, puis un administrateur examine votre candidature. Les opérations du Cercle restent invisibles d'ici là."
-              : 'Notre équipe vérifie votre identité. Vous recevrez une notification dès que votre compte sera activé.',
+          'Notre équipe vérifie votre identité. Vous recevrez une notification dès que votre compte sera activé.',
           style: t.bodySmall,
         ),
         const SizedBox(height: ArzikiEspaces.s),
@@ -105,9 +100,8 @@ class EcranEnAttente extends ConsumerWidget {
               ? null
               : TextButton(onPressed: () => context.push(Chemins.identite), child: const Text('Déposer')),
         ),
-        if (candidat) _EtapeCandidature(uid: u.uid),
-        _Etape(
-          candidat ? "Décision d'admission par un administrateur" : 'Validation par un administrateur',
+        const _Etape(
+          'Validation par un administrateur',
           false,
           detail: 'Vous recevrez une notification dès que votre compte sera activé.',
         ),
@@ -122,33 +116,6 @@ class EcranEnAttente extends ConsumerWidget {
         const CarrouselServices(),
         const BlocConfiance(),
       ]),
-    );
-  }
-}
-
-class _EtapeCandidature extends ConsumerWidget {
-  const _EtapeCandidature({required this.uid});
-  final String uid;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<Candidature?>(
-      future: ref.read(depotComptesProvider).candidatureDe(uid),
-      builder: (context, snap) {
-        final c = snap.data;
-        return _Etape(
-          'Candidature au Cercle',
-          c != null,
-          detail: c == null
-              ? 'À faire : présentez votre candidature.'
-              : c.statut == StatutCandidature.refusee
-                  ? 'Candidature non retenue${c.motif == null ? '' : ' : ${c.motif}'}.'
-                  : c.statut.libelle,
-          action: c == null
-              ? TextButton(onPressed: () => context.push(Chemins.candidature), child: const Text('Remplir'))
-              : null,
-        );
-      },
     );
   }
 }
@@ -241,120 +208,6 @@ class _EcranIdentiteState extends ConsumerState<EcranIdentite> {
         ],
         const SizedBox(height: ArzikiEspaces.l),
         FilledButton(onPressed: _enCours ? null : _envoyer, child: const Text('Envoyer mes pièces')),
-      ]),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-
-const tranchesParticipation = [
-  '500 000 à 2 000 000 FCFA',
-  '2 000 000 à 10 000 000 FCFA',
-  '10 000 000 à 50 000 000 FCFA',
-  'Plus de 50 000 000 FCFA',
-];
-
-const sourcesConnaissance = [
-  'Recommandé par un membre',
-  'Contact direct avec ARZIKI ou NEXUS International',
-  'Événement professionnel',
-  'Autre',
-];
-
-class EcranCandidature extends ConsumerStatefulWidget {
-  const EcranCandidature({super.key});
-
-  @override
-  ConsumerState<EcranCandidature> createState() => _EcranCandidatureState();
-}
-
-class _EcranCandidatureState extends ConsumerState<EcranCandidature> {
-  NiveauCercle _niveau = NiveauCercle.membre;
-  String? _tranche;
-  String? _source;
-  final _prenom = TextEditingController();
-  final _nom = TextEditingController();
-  bool _comprend = false;
-  bool _enCours = false;
-  String? _erreur;
-
-  Future<void> _envoyer() async {
-    setState(() {
-      _enCours = true;
-      _erreur = null;
-    });
-    try {
-      final u = ref.read(sessionProvider).utilisateur!;
-      await ref.read(depotComptesProvider).deposerCandidature(
-            candidat: u,
-            prenom: _prenom.text,
-            nom: _nom.text,
-            niveauSouhaite: _niveau,
-            trancheEnvisagee: _tranche!,
-            commentNousConnu: _source!,
-          );
-      ref.read(sessionProvider.notifier).connecter(u.copier(prenom: _prenom.text.trim(), nom: _nom.text.trim()));
-      if (mounted) context.pop();
-    } on ErreurAcces catch (e) {
-      setState(() => _erreur = e.message);
-    } finally {
-      if (mounted) setState(() => _enCours = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final complet = _tranche != null && _source != null && _comprend && _prenom.text.isNotEmpty && _nom.text.isNotEmpty;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Candidature au Cercle')),
-      body: Colonne(children: [
-        const Encadre(TextesLegaux.cerclePrive, type: TypeEncadre.alerte),
-        const SizedBox(height: ArzikiEspaces.l),
-        TextField(controller: _prenom, decoration: const InputDecoration(labelText: 'Prénom'), onChanged: (_) => setState(() {})),
-        const SizedBox(height: ArzikiEspaces.m),
-        TextField(controller: _nom, decoration: const InputDecoration(labelText: 'Nom'), onChanged: (_) => setState(() {})),
-        const SizedBox(height: ArzikiEspaces.m),
-        DropdownButtonFormField<NiveauCercle>(
-          initialValue: _niveau,
-          decoration: const InputDecoration(labelText: 'Niveau souhaité'),
-          items: [
-            for (final n in NiveauCercle.values)
-              DropdownMenuItem(value: n, child: Text('${n.libelle} (dès ${fcfa(n.participationMinimale)})')),
-          ],
-          onChanged: (v) => setState(() => _niveau = v!),
-        ),
-        const SizedBox(height: ArzikiEspaces.m),
-        DropdownButtonFormField<String>(
-          initialValue: _tranche,
-          decoration: const InputDecoration(labelText: 'Participation envisagée par opération'),
-          items: [for (final t in tranchesParticipation) DropdownMenuItem(value: t, child: Text(t))],
-          onChanged: (v) => setState(() => _tranche = v),
-        ),
-        const SizedBox(height: ArzikiEspaces.m),
-        DropdownButtonFormField<String>(
-          initialValue: _source,
-          decoration: const InputDecoration(labelText: 'Comment avez-vous connu ARZIKI ?'),
-          items: [for (final s in sourcesConnaissance) DropdownMenuItem(value: s, child: Text(s))],
-          onChanged: (v) => setState(() => _source = v),
-        ),
-        const SizedBox(height: ArzikiEspaces.m),
-        CheckboxListTile(
-          value: _comprend,
-          onChanged: (v) => setState(() => _comprend = v ?? false),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          title: const Text(
-            'Je comprends que les participations comportent un risque de perte '
-            "et que l'admission au Cercle n'est pas automatique.",
-          ),
-        ),
-        if (_erreur != null) ...[
-          const SizedBox(height: ArzikiEspaces.m),
-          Encadre(_erreur!, type: TypeEncadre.erreur),
-        ],
-        const SizedBox(height: ArzikiEspaces.l),
-        FilledButton(onPressed: _enCours || !complet ? null : _envoyer, child: const Text('Envoyer ma candidature')),
       ]),
     );
   }
