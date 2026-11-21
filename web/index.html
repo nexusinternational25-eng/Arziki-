@@ -113,6 +113,45 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <!-- Écran de chargement : au premier lancement, l'application télécharge
+       plusieurs mégaoctets. Sans ce message, l'écran semble vide sur un
+       téléphone en 3G. Retiré dès que la première image de l'application
+       s'affiche (événement flutter-first-frame). Si web/index.html est
+       régénéré par flutter_native_splash, remettre ce bloc. -->
+  <div id="chargement" role="status" aria-live="polite">
+    <p id="chargement-texte">Chargement de l'application ARZIKI…</p>
+    <div class="barre"><span></span></div>
+    <p id="chargement-lent" hidden>La connexion est lente. Merci de patienter, le premier chargement peut prendre une minute. Les fois suivantes, l'application s'ouvre beaucoup plus vite.</p>
+    <p id="chargement-erreur" hidden>L'application n'a pas pu se charger. Vérifiez votre connexion, puis <a href="">rechargez la page</a>.</p>
+  </div>
+  <style>
+    #chargement { position: fixed; left: 0; right: 0; bottom: 12%; text-align: center; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #1D2733; padding: 0 24px; }
+    #chargement p { margin: 0 auto 12px; max-width: 360px; }
+    #chargement a { color: #1E8E4E; font-weight: 600; }
+    #chargement .barre { width: 180px; height: 6px; margin: 0 auto 16px; border-radius: 3px; background: #F1E4D6; overflow: hidden; }
+    #chargement .barre span { display: block; width: 40%; height: 100%; border-radius: 3px; background: #F28C28; animation: arziki-chargement 1.2s ease-in-out infinite; }
+    @keyframes arziki-chargement { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+    @media (prefers-color-scheme: dark) { #chargement { color: #FFFFFF; } }
+  </style>
+  <script>
+    (function () {
+      var lent = setTimeout(function () {
+        var e = document.getElementById("chargement-lent"); if (e) e.hidden = false;
+      }, 8000);
+      function fini() {
+        clearTimeout(lent);
+        var c = document.getElementById("chargement"); if (c) c.remove();
+      }
+      window.addEventListener("flutter-first-frame", fini);
+      window.addEventListener("error", function (ev) {
+        // Échec du téléchargement d'un fichier de l'application.
+        if (ev.target && ev.target.tagName === "SCRIPT") {
+          var e = document.getElementById("chargement-erreur"); if (e) e.hidden = false;
+        }
+      }, true);
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async=""></script>
 
 

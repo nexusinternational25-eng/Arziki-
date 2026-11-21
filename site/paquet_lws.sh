@@ -24,11 +24,13 @@ cp -r "$CONSOLE_WEB" "$SORTIE/arziki/console"
 find "$SORTIE/arziki" -name '*.symbols' -delete
 for d in app console; do
   sed -i 's#<base href="[^"]*">#<base href="./">#' "$SORTIE/arziki/$d/index.html"
-  # Hors index Google, et pas de cache sur index.html (mises à jour visibles tout de suite).
+  # Hors index Google ; mises à jour visibles tout de suite.
   cat > "$SORTIE/arziki/$d/.htaccess" <<'HT'
 <IfModule mod_headers.c>
 Header set X-Robots-Tag "noindex, nofollow"
-<FilesMatch "^(index\.html|flutter_bootstrap\.js|version\.json)$">
+# Les fichiers de l'application gardent le même nom d'une version à l'autre :
+# le navigateur les garde, mais redemande à chaque ouverture s'ils ont changé.
+<FilesMatch "\.(html|js|json|wasm|mjs)$">
 Header set Cache-Control "no-cache"
 </FilesMatch>
 </IfModule>
