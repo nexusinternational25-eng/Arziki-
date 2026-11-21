@@ -1,5 +1,6 @@
-// Écrans liés aux opérations : fiche d'une opération (Cercle), participation,
-// suivi par l'entreprise, nouvelle demande de Commande Financée, notifications.
+// Écrans liés aux opérations en vente à terme (CLAUDE.md, section 24) :
+// fiche d'une opération (entreprise, partenaire, notaire), manifestation
+// d'intérêt non engageante, nouvelle demande, notifications.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,9 +10,9 @@ import 'package:go_router/go_router.dart';
 import '../../auth/session.dart';
 import '../../contenu/contenus.dart';
 import '../../core/images.dart';
+import '../../core/roles.dart';
 import '../../core/textes_legaux.dart';
 import '../../operations/operations.dart';
-import '../../preferences/preferences.dart';
 import '../../router/garde_roles.dart';
 import '../../theme/arziki_theme.dart';
 import '../../ui/composants.dart';
@@ -23,9 +24,9 @@ import 'espaces.dart';
 // ---------------------------------------------------------------------------
 
 class FicheOperation extends ConsumerWidget {
-  const FicheOperation({super.key, required this.id, this.vueEntreprise = false});
+  const FicheOperation({super.key, required this.id, required this.vue});
   final String id;
-  final bool vueEntreprise;
+  final VueOperation vue;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,36 +34,29 @@ class FicheOperation extends ConsumerWidget {
     final o = etat.parId(id);
     final u = ref.watch(sessionProvider).utilisateur!;
     final t = Theme.of(context).textTheme;
-    if (o == null) {
+
+    // Chacun ne voit que ce qui le concerne (R3) : sinon, « introuvable ».
+    final autorise = o != null &&
+        switch (vue) {
+          VueOperation.entreprise => o.entrepriseUid == u.uid,
+          VueOperation.partenaire => o.partenairesProposes.contains(u.uid) && u.statut == StatutCompte.actif && u.kycStatut == StatutKyc.valide,
+          VueOperation.notaire => o.notaireUid == u.uid,
+          VueOperation.equipe => u.role.accesConsole,
+        };
+    if (!autorise) {
       return Scaffold(
         appBar: AppBar(title: const Text('Opération')),
         body: Colonne(children: [
           EcranVide(
             icone: Icons.search_off_rounded,
             titre: 'Opération introuvable',
-            texte: "Elle n'est plus disponible ou n'est pas ouverte à votre niveau.",
+            texte: "Elle n'existe pas ou ne vous a pas été proposée.",
             action: 'Retour',
             onAction: () => context.pop(),
           ),
         ]),
       );
     }
-    // Règle légale n° 3 : un membre ne voit que les opérations de son niveau.
-    if (!vueEntreprise && o.estEntreprises && !u.role.voitOperationsEntreprises) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Opération')),
-        body: Colonne(children: [
-          EcranVide(
-            icone: Icons.lock_rounded,
-            titre: 'Réservée au niveau Partenaire',
-            texte: 'Cette opération du format Entreprises est ouverte aux partenaires du Cercle.',
-            action: 'Retour',
-            onAction: () => context.pop(),
-          ),
-        ]),
-      );
-    }
-    final maPart = etat.participations.where((p) => p.uid == u.uid && p.operationId == o.id).firstOrNull;
 
     Widget ligne(String libelle, String valeur, IconData icone) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -75,83 +69,114 @@ class FicheOperation extends ConsumerWidget {
           ]),
         );
 
+    final partenaire = vue == VueOperation.partenaire;
+    final monInteret = o.manifestations[u.uid];
+    final maPart = o.repartition.where((p) => p.partenaireUid == u.uid).firstOrNull;
+    final peutManifester = partenaire && o.ouverteAuxManifestations && maPart == null;
+
     return Scaffold(
-      appBar: barreArziki(context, titre: vueEntreprise ? 'Suivi de mon opération' : "Fiche de l'opération"),
-      bottomNavigationBar: !vueEntreprise && o.estOuverte && maPart == null
+      appBar: barreArziki(context, titre: switch (vue) {
+        VueOperation.entreprise => 'Suivi de ma demande',
+        VueOperation.notaire => 'Dossier notarial',
+        _ => "Fiche de l'opération",
+      }),
+      bottomNavigationBar: peutManifester
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(ArzikiEspaces.m),
                 child: LargeurMax(
-                  child: FilledButton.icon(
-                    onPressed: () => _participer(context, ref, o),
-                    icon: const Icon(Icons.handshake_rounded),
-                    label: const Text('Je participe'),
-                  ),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    FilledButton.icon(
+                      onPressed: () => _manifesterInteret(context, ref, o),
+                      icon: const Icon(Icons.thumb_up_alt_rounded),
+                      label: Text(monInteret == null ? 'Je suis intéressé' : 'Modifier mon intérêt'),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(TextesLegaux.interetNonEngageant, style: t.labelSmall, textAlign: TextAlign.center),
+                  ]),
                 ),
               ),
             )
           : null,
       body: Colonne(children: [
-        EnTeteImage(image: o.image, titre: o.titre, sousTitre: '${o.secteur} · ${o.estEntreprises ? 'Format Entreprises' : 'Format PME'}', hauteur: 210),
+        EnTeteImage(image: o.image, titre: o.titre, sousTitre: o.secteur, hauteur: 210),
         const SizedBox(height: ArzikiEspaces.m),
         Wrap(spacing: ArzikiEspaces.s, runSpacing: ArzikiEspaces.s, children: [
           badgeStatutOperation(o.statut),
-          if (o.estOuverte) BadgeStatut('${o.placesRestantes} places restantes', ton: TonBadge.info),
+          if (monInteret != null && maPart == null) BadgeStatut('Intérêt indiqué : ${fcfa(monInteret)}', ton: TonBadge.info),
         ]),
         const SizedBox(height: ArzikiEspaces.m),
-        if (!vueEntreprise) const AvertissementRisque(),
+        if (partenaire) const AvertissementRisque(),
+        if (o.motif != null && (o.statut == StatutVente.piecesDemandees || o.statut == StatutVente.refusee))
+          Encadre('Message de l\'équipe ARZIKI : ${o.motif}', type: TypeEncadre.alerte),
         const TitreSection("L'opération en bref"),
         Text(o.resume),
-        if (o.estOuverte) ...[
-          const SizedBox(height: ArzikiEspaces.m),
-          CarteArziki(child: JaugeFinancement(reuni: o.montantReuni, objectif: o.montantAReunir)),
-        ],
+        const TitreSection('Vente à terme'),
         CarteArziki(
           child: Column(children: [
-            ligne('Montant à réunir', fcfa(o.montantAReunir), Icons.payments_rounded),
-            ligne('Durée prévue', '${o.dureeJours} jours', Icons.schedule_rounded),
-            ligne('Marge visée (objectif)', '${o.margeViseePct.toStringAsFixed(0)} %', Icons.trending_up_rounded),
-            ligne('Part prévue pour les investisseurs', '${o.partInvestisseursPct} % de la marge nette', Icons.pie_chart_rounded),
-            if (o.estOuverte) ligne('Date limite', dateLongue(o.dateLimite), Icons.event_rounded),
-            if (o.estOuverte) ligne('Participation', '${fcfa(o.minParticipant)} à ${fcfa(o.maxParticipant)}', Icons.account_balance_wallet_rounded),
+            if (!o.conditionsFixees) ...[
+              ligne('Montant de la commande', fcfa(o.montantCommande), Icons.receipt_long_rounded),
+              Padding(
+                padding: const EdgeInsets.only(top: ArzikiEspaces.s),
+                child: Text("Les conditions (prix d'achat, majoration, échéance) seront fixées pendant l'analyse.", style: t.bodySmall),
+              ),
+            ] else ...[
+              ligne("Prix d'achat au fournisseur", fcfa(o.prixAchat!), Icons.shopping_cart_rounded),
+              ligne('Majoration fixe', fcfa(o.majoration!), Icons.add_circle_outline_rounded),
+              ligne('Prix de revente', fcfa(o.prixRevente!), Icons.sell_rounded),
+              ligne('Durée', '${o.dureeJours} jours', Icons.schedule_rounded),
+              if (o.echeance != null) ligne('Échéance', dateLongue(o.echeance!), Icons.event_rounded),
+            ],
           ]),
         ),
-        const TitreSection('Les acteurs'),
-        CarteArziki(
-          child: Column(children: [
-            ligne('Acheteur final', o.acheteur, Icons.business_rounded),
-            ligne('Fournisseur', o.fournisseur, Icons.local_shipping_rounded),
-            ligne('Notaire', 'Maître Kafui Atsu, Lomé', Icons.gavel_rounded),
-            ligne('Garanties prises', o.niveauGaranties, Icons.shield_rounded),
-          ]),
-        ),
-        const TitreSection('Calendrier'),
-        CarteArziki(child: FriseEtapes(etapes: etapesOperation, courante: o.statut.etape)),
         if (maPart != null) ...[
-          const TitreSection('Ma participation'),
+          const TitreSection('Ma part'),
           CarteArziki(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(fcfa(maPart.montant), style: t.headlineSmall),
-              const SizedBox(height: 4),
-              BadgeStatut(maPart.statut.libelle, ton: TonBadge.succes),
-              if (maPart.reference != null) ...[
-                const SizedBox(height: ArzikiEspaces.s),
-                Text('Référence de versement : ${maPart.reference}', style: t.bodySmall),
-              ],
+            couleur: ArzikiCouleurs.vert.withValues(alpha: 0.07),
+            child: Column(children: [
+              ligne('Mon apport (part du prix d\'achat)', fcfa(maPart.montant), Icons.handshake_rounded),
+              ligne('Ma part de la majoration', fcfa(maPart.partMajoration), Icons.add_circle_outline_rounded),
+              ligne("À recevoir à l'échéance", fcfa(maPart.aRecevoir), Icons.account_balance_rounded),
             ]),
           ),
         ],
-        if (vueEntreprise) ...[
-          const TitreSection('Documents'),
-          for (final d in const ['Bon de commande signé', 'Devis du fournisseur', 'Convention-cadre (notaire)'])
-            CarteArziki(
-              child: Row(children: [
-                const Icon(Icons.description_rounded, color: ArzikiCouleurs.vert),
-                const SizedBox(width: ArzikiEspaces.m),
-                Expanded(child: Text(d)),
-                const BadgeStatut('Reçu', ton: TonBadge.succes),
-              ]),
+        const TitreSection('Les acteurs'),
+        CarteArziki(
+          child: Column(children: [
+            ligne('Client final', partenaire ? 'Grand compte, secteur ${o.secteur}' : o.clientFinal, Icons.business_rounded),
+            ligne('Fournisseur', o.fournisseur, Icons.local_shipping_rounded),
+            if (o.notaireUid != null) ligne('Notaire', 'Maître Kafui Atsu, Lomé', Icons.gavel_rounded),
+          ]),
+        ),
+        const TitreSection('Garanties'),
+        if (o.garanties.isEmpty)
+          CarteArziki(
+            child: Text(
+              o.garantiesProposees.isEmpty
+                  ? 'Les garanties seront fixées pendant l\'analyse.'
+                  : 'Proposées par l\'entreprise : ${o.garantiesProposees.map((g) => g.libelle).join(', ')}.',
             ),
+          ),
+        for (final g in o.garanties) _LigneGarantie(operation: o, garantie: g, modifiable: vue == VueOperation.notaire),
+        const TitreSection('Étapes'),
+        CarteArziki(child: FriseEtapes(etapes: etapesVente, courante: o.statut.etape)),
+        if (vue == VueOperation.notaire) _ActionsNotaire(operation: o),
+        const TitreSection('Documents'),
+        for (final d in [
+          if (vue == VueOperation.entreprise) 'Bon de commande ou marché',
+          if (vue == VueOperation.entreprise) 'Devis du fournisseur',
+          if (o.conditionsFixees) 'Projet de contrat de vente à terme (à valider par le notaire)',
+          if (o.statut.index >= StatutVente.signee.index && o.statut != StatutVente.annulee) 'Actes signés devant notaire',
+        ])
+          CarteArziki(
+            child: Row(children: [
+              const Icon(Icons.description_rounded, color: ArzikiCouleurs.vert),
+              const SizedBox(width: ArzikiEspaces.m),
+              Expanded(child: Text(d)),
+              const Icon(Icons.lock_outline_rounded, size: 18),
+            ]),
+          ),
+        if (vue == VueOperation.entreprise) ...[
           const SizedBox(height: ArzikiEspaces.s),
           OutlinedButton.icon(
             onPressed: () => context.push(Chemins.info(PagesId.aide)),
@@ -159,89 +184,151 @@ class FicheOperation extends ConsumerWidget {
             label: const Text("Écrire à l'équipe ARZIKI"),
           ),
         ],
-        if (!vueEntreprise) ...[const SizedBox(height: ArzikiEspaces.m), const AvertissementRisque()],
+        if (partenaire) ...[const SizedBox(height: ArzikiEspaces.m), const AvertissementRisque()],
         const SizedBox(height: ArzikiEspaces.l),
       ]),
     );
   }
 
-  Future<void> _participer(BuildContext context, WidgetRef ref, Operation o) async {
-    final u = ref.read(sessionProvider).utilisateur!;
-    final minimum = o.minParticipant > u.niveau!.participationMinimale ? o.minParticipant : u.niveau!.participationMinimale;
-    final p = await showModalBottomSheet<Participation>(
+  Future<void> _manifesterInteret(BuildContext context, WidgetRef ref, Operation o) async {
+    final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _FeuilleParticipation(operation: o, minimum: minimum),
+      builder: (_) => _FeuilleInteret(operation: o),
     );
-    if (p == null || !context.mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.check_circle_rounded, color: ArzikiCouleurs.vert, size: 48),
-        title: const Text('Intention enregistrée'),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Versez ${fcfa(p.montant)} par virement ou mobile money sur le compte séquestre du notaire :'),
-          const SizedBox(height: ArzikiEspaces.s),
-          const SelectableText('Maître Kafui Atsu, compte séquestre ARZIKI\nBanque partenaire, Lomé'),
-          const SizedBox(height: ArzikiEspaces.s),
-          SelectableText('Référence à indiquer : ${p.reference}', style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: ArzikiEspaces.s),
-          const Text('Déposez ensuite votre preuve de versement depuis « Mes participations ».'),
-        ]),
-        actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text("J'ai compris"))],
-      ),
+    if (ok == true && context.mounted) {
+      annoncer(context, "Intérêt enregistré. L'équipe ARZIKI vous contactera avant toute signature devant notaire.");
+    }
+  }
+}
+
+class _LigneGarantie extends ConsumerWidget {
+  const _LigneGarantie({required this.operation, required this.garantie, required this.modifiable});
+  final Operation operation;
+  final Garantie garantie;
+  final bool modifiable;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final g = garantie;
+    return CarteArziki(
+      child: Row(children: [
+        Icon(g.constituee ? Icons.verified_rounded : Icons.shield_outlined, color: g.constituee ? ArzikiCouleurs.vert : ArzikiCouleurs.orange),
+        const SizedBox(width: ArzikiEspaces.m),
+        Expanded(child: Text(g.type.libelle)),
+        if (!modifiable)
+          BadgeStatut(g.statut.libelle, ton: g.constituee ? TonBadge.succes : TonBadge.attente)
+        else
+          DropdownButton<StatutGarantie>(
+            value: g.statut,
+            underline: const SizedBox(),
+            items: [for (final s in StatutGarantie.values) DropdownMenuItem(value: s, child: Text(s.libelle))],
+            onChanged: (s) {
+              if (s == null) return;
+              final uid = ref.read(sessionProvider).utilisateur!.uid;
+              ref.read(operationsProvider.notifier).majGarantie(uid, operation.id, g.type, s);
+              annoncer(context, '${g.type.libelle} : ${s.libelle.toLowerCase()}.');
+            },
+          ),
+      ]),
     );
   }
 }
 
-class _FeuilleParticipation extends ConsumerStatefulWidget {
-  const _FeuilleParticipation({required this.operation, required this.minimum});
+/// Actions du notaire assigné : confirmer la signature, puis le paiement au fournisseur.
+class _ActionsNotaire extends ConsumerWidget {
+  const _ActionsNotaire({required this.operation});
   final Operation operation;
-  final int minimum;
 
   @override
-  ConsumerState<_FeuilleParticipation> createState() => _FeuilleParticipationState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final o = operation;
+    final uid = ref.read(sessionProvider).utilisateur!.uid;
+    void faire(StatutVente vers, String message) {
+      try {
+        ref.read(operationsProvider.notifier).changerStatut(uid, o.id, vers);
+        annoncer(context, message);
+      } on ErreurVente catch (e) {
+        annoncer(context, e.message, erreur: true);
+      }
+    }
+
+    final actions = <Widget>[
+      if (o.statut == StatutVente.interetManifeste)
+        FilledButton.icon(
+          onPressed: () => faire(StatutVente.signee, 'Signature devant notaire enregistrée.'),
+          icon: const Icon(Icons.draw_rounded),
+          label: const Text('Confirmer la signature devant notaire'),
+        ),
+      if (o.statut == StatutVente.signee)
+        FilledButton.icon(
+          onPressed: () => faire(StatutVente.fournisseurPaye, 'Paiement au fournisseur confirmé.'),
+          icon: const Icon(Icons.payments_rounded),
+          label: const Text('Confirmer le paiement au fournisseur'),
+        ),
+    ];
+    if (actions.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const TitreSection('À faire'),
+      ...actions,
+      const SizedBox(height: ArzikiEspaces.s),
+      Text(
+        'Le paiement au fournisseur n\'est possible que lorsque toutes les garanties sont signées ou inscrites.',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    ]);
+  }
 }
 
-class _FeuilleParticipationState extends ConsumerState<_FeuilleParticipation> {
+/// « Je suis intéressé » : montant indicatif, non engageant (R4).
+class _FeuilleInteret extends ConsumerStatefulWidget {
+  const _FeuilleInteret({required this.operation});
+  final Operation operation;
+
+  @override
+  ConsumerState<_FeuilleInteret> createState() => _FeuilleInteretState();
+}
+
+class _FeuilleInteretState extends ConsumerState<_FeuilleInteret> {
   final _montant = TextEditingController();
-  final _pin = TextEditingController();
   bool _comprend = false;
   String? _erreur;
 
   int get _valeur => int.tryParse(_montant.text.replaceAll(RegExp(r'\D'), '')) ?? 0;
 
+  @override
+  void initState() {
+    super.initState();
+    final deja = widget.operation.manifestations[ref.read(sessionProvider).utilisateur!.uid];
+    if (deja != null) _montant.text = '$deja';
+  }
+
   void _valider() {
     final o = widget.operation;
-    final pinAttendu = ref.read(preferencesProvider).codePin;
-    setState(() => _erreur = null);
-    if (_valeur < widget.minimum || _valeur > o.maxParticipant) {
-      setState(() => _erreur = 'Le montant doit être compris entre ${fcfa(widget.minimum)} et ${fcfa(o.maxParticipant)}.');
-      return;
-    }
     if (!_comprend) {
-      setState(() => _erreur = 'Cochez la case pour confirmer que vous comprenez le risque de perte.');
+      setState(() => _erreur = 'Cochez la case pour confirmer que vous avez compris.');
       return;
     }
-    if (_pin.text.length != 4 || (pinAttendu != null && _pin.text != pinAttendu)) {
-      setState(() => _erreur = pinAttendu == null ? 'Saisissez un code PIN à 4 chiffres.' : 'Code PIN incorrect.');
-      return;
+    try {
+      ref.read(operationsProvider.notifier).manifesterInteret(uid: ref.read(sessionProvider).utilisateur!.uid, id: o.id, montant: _valeur);
+      Navigator.pop(context, true);
+    } on ErreurVente catch (e) {
+      setState(() => _erreur = e.message);
     }
-    if (pinAttendu == null) ref.read(preferencesProvider.notifier).definirPin(_pin.text);
-    final p = ref.read(operationsProvider.notifier).participer(uid: ref.read(sessionProvider).utilisateur!.uid, op: o, montant: _valeur);
-    Navigator.pop(context, p);
   }
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final pinDefini = ref.watch(preferencesProvider).codePin != null;
+    final o = widget.operation;
     return Padding(
       padding: EdgeInsets.fromLTRB(ArzikiEspaces.l, 0, ArzikiEspaces.l, MediaQuery.viewInsetsOf(context).bottom + ArzikiEspaces.l),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text('Je participe', style: t.titleLarge),
-          Text(widget.operation.titre, style: t.bodySmall),
+          Text('Je suis intéressé', style: t.titleLarge),
+          Text(o.titre, style: t.bodySmall),
+          const SizedBox(height: ArzikiEspaces.m),
+          const Encadre(TextesLegaux.interetNonEngageant, icone: Icons.info_outline_rounded),
           const SizedBox(height: ArzikiEspaces.m),
           TextField(
             controller: _montant,
@@ -249,59 +336,21 @@ class _FeuilleParticipationState extends ConsumerState<_FeuilleParticipation> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'Montant de ma participation (FCFA)',
-              helperText: 'De ${fcfa(widget.minimum)} à ${fcfa(widget.operation.maxParticipant)}'
-                  '${_valeur > 0 ? ' · vous saisissez ${fcfa(_valeur)}' : ''}',
+              labelText: 'Montant que vous envisagez (FCFA)',
+              helperText: "Indicatif, au plus ${fcfa(o.prixAchat ?? 0)}${_valeur > 0 ? ' · vous saisissez ${fcfa(_valeur)}' : ''}",
             ),
           ),
-          const SizedBox(height: ArzikiEspaces.m),
-          const Encadre(TextesLegaux.regleEspeces, icone: Icons.payments_rounded),
           const SizedBox(height: ArzikiEspaces.s),
-          OutlinedButton.icon(
-            onPressed: () => showDialog<void>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text('Contrat de participation'),
-                content: const SingleChildScrollView(
-                  child: Text(
-                    'Objet : le participant engage une somme dans l\'opération commerciale décrite dans la fiche, '
-                    'aux côtés des autres participants.\n\n'
-                    'Versement : la somme est versée par virement ou mobile money sur le compte séquestre du notaire, '
-                    'avec la référence indiquée. La participation est confirmée après vérification de la preuve.\n\n'
-                    'Rémunération : à la clôture, le participant reçoit sa part de la marge nette réelle, au prorata '
-                    'de son versement confirmé, selon la répartition prévue dans la fiche et les actes notariés.\n\n'
-                    'Durée : la somme est immobilisée jusqu\'à la clôture de l\'opération.\n\n'
-                    'Annulation : si le financement n\'est pas réuni à la date limite, la somme est restituée par le notaire.\n\n'
-                    'Risque : le participant supporte sa part d\'une éventuelle perte, selon le contrat. ${TextesLegaux.avertissementRisque}',
-                  ),
-                ),
-                actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer'))],
-              ),
-            ),
-            icon: const Icon(Icons.picture_as_pdf_rounded),
-            label: const Text('Lire le contrat de participation'),
-          ),
           CheckboxListTile(
             value: _comprend,
             onChanged: (v) => setState(() => _comprend = v ?? false),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
-            title: const Text("J'ai lu et je comprends que je peux perdre tout ou partie de ma mise."),
-          ),
-          TextField(
-            controller: _pin,
-            obscureText: true,
-            keyboardType: TextInputType.number,
-            maxLength: 4,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
-              labelText: pinDefini ? 'Mon code PIN' : 'Créer mon code PIN (4 chiffres)',
-              helperText: 'Le code PIN valide votre participation, comme une signature.',
-            ),
+            title: const Text("Je comprends que toute participation comporte un risque de perte et que seule la signature devant notaire m'engage."),
           ),
           if (_erreur != null) ...[const SizedBox(height: ArzikiEspaces.s), Encadre(_erreur!, type: TypeEncadre.erreur)],
           const SizedBox(height: ArzikiEspaces.m),
-          FilledButton(onPressed: _valider, child: const Text('Valider ma participation')),
+          FilledButton(onPressed: _valeur > 0 ? _valider : null, child: const Text('Envoyer mon intérêt')),
         ]),
       ),
     );
@@ -309,7 +358,7 @@ class _FeuilleParticipationState extends ConsumerState<_FeuilleParticipation> {
 }
 
 // ---------------------------------------------------------------------------
-// Nouvelle demande de Commande Financée
+// Nouvelle demande : commande à financer (section 24)
 // ---------------------------------------------------------------------------
 
 class EcranNouvelleDemande extends ConsumerStatefulWidget {
@@ -324,21 +373,23 @@ class EcranNouvelleDemande extends ConsumerStatefulWidget {
 
 class _EcranNouvelleDemandeState extends ConsumerState<EcranNouvelleDemande> {
   int _etape = 0;
-  final _acheteur = TextEditingController();
+  final _client = TextEditingController();
   final _rccm = TextEditingController();
   final _contact = TextEditingController();
   String? _secteur;
   final _description = TextEditingController();
-  final _vente = TextEditingController();
-  final _delaiPaiement = TextEditingController(text: '45');
+  final _montant = TextEditingController();
+  final _delai = TextEditingController(text: '60');
   bool _bonCommande = false;
   final _fournisseur = TextEditingController();
-  bool _devis = false;
+  final _contactFournisseur = TextEditingController();
   final _achat = TextEditingController();
-  final _transport = TextEditingController();
-  final _autres = TextEditingController();
+  bool _devis = false;
+  final _garanties = <TypeGarantie>{};
   bool _engagement = false;
   String? _erreur;
+
+  static const _titres = ['Le client final', 'La commande', 'Le fournisseur', 'Les garanties proposées', 'Récapitulatif'];
 
   @override
   void initState() {
@@ -351,20 +402,23 @@ class _EcranNouvelleDemandeState extends ConsumerState<EcranNouvelleDemande> {
   String? _verifier(int etape) {
     switch (etape) {
       case 0:
-        if (_acheteur.text.trim().length < 3) return "Indiquez la raison sociale de l'acheteur.";
-        if (_contact.text.trim().length < 8) return "Indiquez un contact de l'acheteur (téléphone ou e-mail).";
+        if (_client.text.trim().length < 3) return 'Indiquez la raison sociale de votre client.';
+        if (_contact.text.trim().length < 8) return 'Indiquez un contact chez votre client (téléphone ou e-mail).';
         if (_secteur == null) return 'Choisissez le secteur.';
       case 1:
         if (_description.text.trim().length < 10) return 'Décrivez la commande en quelques mots.';
-        if (_n(_vente) < 2000000) return 'Le prix de vente total doit être d\'au moins 2 000 000 FCFA.';
-        if (!_bonCommande) return 'Joignez le bon de commande ou le contrat (photo ou PDF).';
+        if (_n(_montant) < 1000000) return 'Le montant de la commande doit être d\'au moins 1 000 000 FCFA.';
+        if (_n(_delai) < 1 || _n(_delai) > 365) return 'Le délai doit être compris entre 1 et 365 jours.';
+        if (!_bonCommande) return 'Joignez le bon de commande ou le marché (PDF, JPG ou PNG).';
       case 2:
         if (_fournisseur.text.trim().length < 3) return 'Indiquez le nom du fournisseur.';
+        if (_contactFournisseur.text.trim().length < 8) return 'Indiquez un contact chez le fournisseur.';
+        if (_n(_achat) <= 0) return "Indiquez le prix d'achat chez le fournisseur.";
+        if (_n(_achat) >= _n(_montant)) return "Le prix d'achat doit être inférieur au montant de votre commande.";
         if (!_devis) return 'Joignez le devis ou la facture pro forma du fournisseur.';
       case 3:
-        if (_n(_achat) <= 0) return "Indiquez le prix d'achat.";
-        if (_n(_achat) >= _n(_vente)) return "Le prix d'achat doit être inférieur au prix de vente.";
-      case 5:
+        if (_garanties.isEmpty) return 'Choisissez au moins une garantie que vous pouvez proposer.';
+      case 4:
         if (!_engagement) return "Cochez l'engagement sur l'honneur pour envoyer la demande.";
     }
     return null;
@@ -374,57 +428,59 @@ class _EcranNouvelleDemandeState extends ConsumerState<EcranNouvelleDemande> {
     final e = _verifier(_etape);
     setState(() => _erreur = e);
     if (e != null) return;
-    if (_etape < 5) {
+    if (_etape < 4) {
       setState(() => _etape++);
-    } else {
-      final u = ref.read(sessionProvider).utilisateur!;
-      final d = Demande(
-        id: 'd${DateTime.now().millisecondsSinceEpoch}',
-        uid: u.uid,
-        titre: _description.text.trim().split('\n').first,
-        acheteur: _acheteur.text.trim(),
-        montantVente: _n(_vente),
-        prixAchat: _n(_achat),
-        frais: _n(_transport) + _n(_autres),
-        creeLe: DateTime.now(),
-      );
-      ref.read(operationsProvider.notifier).soumettreDemande(d);
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          icon: const Icon(Icons.check_circle_rounded, color: ArzikiCouleurs.vert, size: 48),
-          title: const Text('Demande envoyée'),
-          content: const Text('Notre équipe va contacter directement votre acheteur et votre fournisseur. '
-              'Vous suivrez chaque étape dans « Mes opérations ».'),
-          actions: [
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.go(Chemins.entreprise);
-              },
-              child: const Text('Retour à mon espace'),
-            ),
-          ],
-        ),
-      );
+      return;
     }
+    final u = ref.read(sessionProvider).utilisateur!;
+    ref.read(operationsProvider.notifier).soumettre(Operation(
+          id: 'op-${DateTime.now().millisecondsSinceEpoch}',
+          titre: _description.text.trim().split('\n').first,
+          secteur: _secteur!,
+          image: Images.entrepreneurEntrepot,
+          statut: StatutVente.soumise,
+          entrepriseUid: u.uid,
+          clientFinal: _client.text.trim(),
+          fournisseur: _fournisseur.text.trim(),
+          resume: _description.text.trim(),
+          montantCommande: _n(_montant),
+          creeLe: DateTime.now(),
+          garantiesProposees: _garanties.toList(),
+          pays: u.pays,
+        ));
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.check_circle_rounded, color: ArzikiCouleurs.vert, size: 48),
+        title: const Text('Demande envoyée'),
+        content: const Text('Notre équipe va contacter directement votre client et votre fournisseur. '
+            'Vous suivrez chaque étape dans « Mes opérations ».'),
+        actions: [
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.go(Chemins.entreprise);
+            },
+            child: const Text('Retour à mon espace'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final marge = calculerMarge(vente: _n(_vente), achat: _n(_achat), transport: _n(_transport), autres: _n(_autres));
-    const titres = ["L'acheteur", 'La commande', 'Le fournisseur', 'Les coûts', 'Les garanties', 'Récapitulatif'];
 
-    Widget champMontant(TextEditingController c, String libelle, {String? aide}) => Padding(
+    Widget champMontant(TextEditingController c, String libelle) => Padding(
           padding: const EdgeInsets.only(bottom: ArzikiEspaces.m),
           child: TextField(
             controller: c,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(labelText: libelle, suffixText: 'FCFA', helperText: aide ?? (_n(c) > 0 ? fcfa(_n(c)) : null)),
+            decoration: InputDecoration(labelText: libelle, suffixText: 'FCFA', helperText: _n(c) > 0 ? fcfa(_n(c)) : null),
           ),
         );
     Widget piece(bool ok, String libelle, VoidCallback onTap) => CarteArziki(
@@ -437,15 +493,16 @@ class _EcranNouvelleDemandeState extends ConsumerState<EcranNouvelleDemande> {
           ]),
         );
 
+    final suggerees = garantiesSuggerees(_n(_achat));
     final contenu = switch (_etape) {
       0 => [
-          TextField(controller: _acheteur, decoration: const InputDecoration(labelText: "Raison sociale de l'acheteur")),
+          TextField(controller: _client, decoration: const InputDecoration(labelText: 'Raison sociale de votre client')),
           const SizedBox(height: ArzikiEspaces.m),
-          TextField(controller: _rccm, decoration: const InputDecoration(labelText: 'RCCM (si connu)')),
+          TextField(controller: _rccm, decoration: const InputDecoration(labelText: 'RCCM du client (si connu)')),
           const SizedBox(height: ArzikiEspaces.m),
           TextField(
             controller: _contact,
-            decoration: const InputDecoration(labelText: 'Contact chez l\'acheteur', helperText: 'ARZIKI appellera directement ce contact.'),
+            decoration: const InputDecoration(labelText: 'Contact chez votre client', helperText: 'ARZIKI appellera directement ce contact.'),
           ),
           const SizedBox(height: ArzikiEspaces.m),
           DropdownButtonFormField<String>(
@@ -461,66 +518,54 @@ class _EcranNouvelleDemandeState extends ConsumerState<EcranNouvelleDemande> {
       1 => [
           TextField(controller: _description, maxLines: 3, decoration: const InputDecoration(labelText: 'Description de la commande', helperText: 'Produits, quantités, date de livraison')),
           const SizedBox(height: ArzikiEspaces.m),
-          champMontant(_vente, 'Prix de vente total'),
+          champMontant(_montant, 'Montant de la commande (ce que votre client paiera)'),
           TextField(
-            controller: _delaiPaiement,
+            controller: _delai,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(labelText: "Délai de paiement promis par l'acheteur", suffixText: 'jours'),
+            decoration: const InputDecoration(labelText: 'Délai souhaité jusqu\'à l\'échéance', suffixText: 'jours'),
           ),
           const SizedBox(height: ArzikiEspaces.s),
-          piece(_bonCommande, 'Bon de commande ou contrat (obligatoire)', () => setState(() => _bonCommande = true)),
+          piece(_bonCommande, 'Bon de commande ou marché (obligatoire)', () => setState(() => _bonCommande = true)),
         ],
       2 => [
-          TextField(controller: _fournisseur, decoration: const InputDecoration(labelText: 'Nom et contact du fournisseur')),
-          const SizedBox(height: ArzikiEspaces.s),
+          TextField(controller: _fournisseur, decoration: const InputDecoration(labelText: 'Nom du fournisseur')),
+          const SizedBox(height: ArzikiEspaces.m),
+          TextField(controller: _contactFournisseur, decoration: const InputDecoration(labelText: 'Contact du fournisseur')),
+          const SizedBox(height: ArzikiEspaces.m),
+          champMontant(_achat, "Prix d'achat chez le fournisseur"),
           piece(_devis, 'Devis ou facture pro forma (obligatoire)', () => setState(() => _devis = true)),
         ],
       3 => [
-          champMontant(_achat, "Prix d'achat chez le fournisseur"),
-          champMontant(_transport, 'Transport'),
-          champMontant(_autres, 'Autres frais (douane, manutention, assurance)'),
-          CarteArziki(
-            couleur: (marge.nettePct >= 8 ? ArzikiCouleurs.vert : ArzikiCouleurs.erreur).withValues(alpha: 0.07),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Marge prévisionnelle', style: t.titleMedium),
-              const SizedBox(height: ArzikiEspaces.s),
-              Text('Marge brute : ${fcfa(marge.brute)}'),
-              Text('Marge nette : ${fcfa(marge.nette)} (${marge.nettePct.toStringAsFixed(1).replaceAll('.', ',')} %)'),
-            ]),
-          ),
-          if (_n(_vente) > 0 && marge.nettePct < 8)
-            const Padding(
-              padding: EdgeInsets.only(top: ArzikiEspaces.s),
-              child: Encadre('La marge nette est inférieure à 8 % : la demande risque d\'être refusée. Vérifiez vos prix et vos frais.', type: TypeEncadre.alerte),
-            ),
-        ],
-      4 => [
-          Text('Pour un achat de ${fcfa(_n(_achat))}, les garanties suivantes seront demandées :', style: t.bodyMedium),
+          Text('Cochez les garanties que vous pouvez proposer. Pour ${fcfa(_n(_achat))}, nous suggérons celles marquées « suggérée ».', style: t.bodyMedium),
           const SizedBox(height: ArzikiEspaces.s),
-          for (final g in garantiesPour(_n(_achat)))
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(children: [
-                const Icon(Icons.shield_rounded, size: 20, color: ArzikiCouleurs.vert),
-                const SizedBox(width: ArzikiEspaces.s),
-                Expanded(child: Text(g)),
-              ]),
+          for (final g in TypeGarantie.values)
+            CheckboxListTile(
+              value: _garanties.contains(g),
+              onChanged: (v) => setState(() => v == true ? _garanties.add(g) : _garanties.remove(g)),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              title: Text(g.libelle),
+              subtitle: suggerees.contains(g) ? const Text('Suggérée pour ce montant') : null,
             ),
-          const SizedBox(height: ArzikiEspaces.s),
-          Text("Forme de l'acte : ${formeActePour(_n(_achat))}", style: t.bodySmall),
+          const Encadre('Les garanties sont signées devant notaire et, si besoin, inscrites au RCCM.', icone: Icons.gavel_rounded),
         ],
       _ => [
           CarteArziki(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(_description.text, style: t.titleSmall),
               const SizedBox(height: ArzikiEspaces.s),
-              Text('Acheteur : ${_acheteur.text}'),
+              Text('Client final : ${_client.text}'),
               Text('Fournisseur : ${_fournisseur.text}'),
-              Text('Prix de vente : ${fcfa(_n(_vente))}'),
+              Text('Montant de la commande : ${fcfa(_n(_montant))}'),
               Text("Prix d'achat : ${fcfa(_n(_achat))}"),
-              Text('Marge nette prévue : ${fcfa(marge.nette)} (${marge.nettePct.toStringAsFixed(1).replaceAll('.', ',')} %)'),
+              Text('Délai : ${_n(_delai)} jours'),
+              Text('Garanties proposées : ${_garanties.map((g) => g.libelle).join(', ')}'),
             ]),
+          ),
+          const Encadre(
+            "La majoration et l'échéance vous seront proposées par écrit après l'analyse. Rien n'est engagé avant la signature devant notaire.",
+            icone: Icons.info_outline_rounded,
           ),
           CheckboxListTile(
             value: _engagement,
@@ -535,9 +580,9 @@ class _EcranNouvelleDemandeState extends ConsumerState<EcranNouvelleDemande> {
     return Scaffold(
       appBar: AppBar(title: const Text('Nouvelle demande')),
       body: Colonne(children: [
-        const EnTetePage('Commande Financée', 'Six étapes rapides. Votre brouillon reste ouvert tant que vous ne quittez pas cet écran.'),
+        const EnTetePage('Commande à financer', 'Cinq étapes rapides. Votre brouillon reste ouvert tant que vous ne quittez pas cet écran.'),
         Row(children: [
-          for (var i = 0; i < 6; i++)
+          for (var i = 0; i < 5; i++)
             Expanded(
               child: Container(
                 height: 6,
@@ -550,7 +595,7 @@ class _EcranNouvelleDemandeState extends ConsumerState<EcranNouvelleDemande> {
             ),
         ]),
         const SizedBox(height: ArzikiEspaces.m),
-        Text('Étape ${_etape + 1} sur 6 : ${titres[_etape]}', style: t.titleLarge),
+        Text('Étape ${_etape + 1} sur 5 : ${_titres[_etape]}', style: t.titleLarge),
         const SizedBox(height: ArzikiEspaces.m),
         ...contenu,
         if (_erreur != null) ...[const SizedBox(height: ArzikiEspaces.m), Encadre(_erreur!, type: TypeEncadre.erreur)],
@@ -559,7 +604,7 @@ class _EcranNouvelleDemandeState extends ConsumerState<EcranNouvelleDemande> {
           if (_etape > 0)
             Expanded(child: OutlinedButton(onPressed: () => setState(() { _etape--; _erreur = null; }), child: const Text('Précédent'))),
           if (_etape > 0) const SizedBox(width: ArzikiEspaces.m),
-          Expanded(child: FilledButton(onPressed: _suivant, child: Text(_etape == 5 ? 'Envoyer la demande' : 'Suivant'))),
+          Expanded(child: FilledButton(onPressed: _suivant, child: Text(_etape == 4 ? 'Envoyer la demande' : 'Suivant'))),
         ]),
       ]),
     );

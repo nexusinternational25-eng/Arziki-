@@ -52,45 +52,75 @@ void main() {
     });
   });
 
-  group('Opérations', () {
-    test('un membre voit les opérations PME ouvertes, un partenaire aussi les Entreprises', () {
+  group('Opérations en vente à terme (démonstration)', () {
+    ProviderContainer conteneur() {
       final c = ProviderContainer();
       addTearDown(c.dispose);
+      return c;
+    }
+
+    test('un partenaire ne voit que les opérations qui lui sont proposées, et seulement vérifié', () {
+      final ctrl = conteneur().read(operationsProvider.notifier);
+      final membre = ctrl.proposeesA('u-membre-1', verifie: true);
+      expect(membre, isNotEmpty);
+      expect(membre.every((o) => o.partenairesProposes.contains('u-membre-1')), isTrue);
+      expect(membre.any((o) => o.id == 'op-mine'), isFalse);
+      expect(ctrl.proposeesA('u-membre-1', verifie: false), isEmpty);
+      expect(ctrl.proposeesA('u-inconnu', verifie: true), isEmpty);
+    });
+
+    test('jeu de démonstration : toutes les étapes, un retard, aucune marge partagée', () {
+      final ops = operationsDemo();
+      expect(ops.length, greaterThanOrEqualTo(8));
+      expect(ops.where((o) => o.statut == StatutVente.enRetard), hasLength(1));
+      expect(ops.map((o) => o.statut).toSet().length, greaterThanOrEqualTo(8));
+      for (final o in ops.where((o) => o.apportsRetenus.isNotEmpty)) {
+        expect(o.apportsRetenus.fold<int>(0, (s, a) => s + a.montant), o.prixAchat, reason: o.id);
+      }
+    });
+
+    test('parcours complet : analyse, conditions, proposition, intérêt, apports, signature, clôture', () {
+      final c = conteneur();
       final ctrl = c.read(operationsProvider.notifier);
-      final membre = ctrl.ouvertesPour(Role.membre);
-      final partenaire = ctrl.ouvertesPour(Role.partenaire);
-      expect(membre.every((o) => o.estOuverte && !o.estEntreprises), isTrue);
-      expect(partenaire.any((o) => o.estEntreprises), isTrue);
-      expect(ctrl.ouvertesPour(Role.candidatCercle), isEmpty);
-      expect(ctrl.ouvertesPour(Role.entreprise), isEmpty);
+      const id = 'op-demande';
+      ctrl.changerStatut('u-admin', id, StatutVente.enAnalyse);
+      ctrl.definirConditions('u-admin', id, prixAchat: 8000000, majoration: 240000, dureeJours: 60);
+      expect(c.read(operationsProvider).parId(id)!.prixRevente, 8240000);
+      ctrl.proposer('u-admin', id, ['u-membre-1', 'u-membre-2']);
+      expect(() => ctrl.manifesterInteret(uid: 'u-membre-3', id: id, montant: 1000000), throwsA(isA<ErreurVente>()));
+      ctrl.manifesterInteret(uid: 'u-membre-1', id: id, montant: 5000000);
+      ctrl.manifesterInteret(uid: 'u-membre-2', id: id, montant: 3000000);
+      expect(c.read(operationsProvider).parId(id)!.statut, StatutVente.interetManifeste);
+      // Pas de signature sans apports exacts ni garantie.
+      expect(() => ctrl.changerStatut('u-admin', id, StatutVente.signee), throwsA(isA<ErreurVente>()));
+      ctrl.retenirApports('u-admin', id, const [Apport('u-membre-1', 5000000), Apport('u-membre-2', 3000000)]);
+      expect(() => ctrl.changerStatut('u-admin', id, StatutVente.signee), throwsA(isA<ErreurVente>()));
+      ctrl.majGarantie('u-admin', id, TypeGarantie.reservePropriete, StatutGarantie.aConstituer);
+      ctrl.changerStatut('u-notaire', id, StatutVente.signee);
+      // Pas de paiement au fournisseur tant que la garantie n'est pas signée.
+      expect(() => ctrl.changerStatut('u-notaire', id, StatutVente.fournisseurPaye), throwsA(isA<ErreurVente>()));
+      ctrl.majGarantie('u-notaire', id, TypeGarantie.reservePropriete, StatutGarantie.signee);
+      for (final s in [StatutVente.fournisseurPaye, StatutVente.livree, StatutVente.echeancePayee, StatutVente.cloturee]) {
+        ctrl.changerStatut('u-admin', id, s);
+      }
+      final o = c.read(operationsProvider).parId(id)!;
+      expect(o.statut, StatutVente.cloturee);
+      expect(o.repartition.fold<int>(0, (s, p) => s + p.aRecevoir), 8240000);
+      expect(c.read(baseDemoProvider).journal.where((e) => e.cible == 'operations/$id').length, greaterThanOrEqualTo(10));
     });
-    test('8 opérations de démonstration, dont une en retard et une en perte', () {
-      expect(operationsDemo, hasLength(8));
-      expect(operationsDemo.where((o) => o.statut == StatutOperation.enRetard), hasLength(1));
-      expect(operationsDemo.where((o) => (o.resultatPct ?? 0) < 0), hasLength(1));
+
+    test('un refus exige un motif', () {
+      final ctrl = conteneur().read(operationsProvider.notifier);
+      ctrl.changerStatut('u-admin', 'op-demande', StatutVente.enAnalyse);
+      expect(() => ctrl.changerStatut('u-admin', 'op-demande', StatutVente.refusee), throwsA(isA<ErreurVente>()));
+      ctrl.changerStatut('u-admin', 'op-demande', StatutVente.refusee, motif: 'Client final injoignable');
     });
-    test('une participation est enregistrée « versement attendu », avec référence et audit', () {
-      final c = ProviderContainer();
-      addTearDown(c.dispose);
-      final op = operationsDemo.first;
-      final p = c.read(operationsProvider.notifier).participer(uid: 'u-membre-2', op: op, montant: 1000000);
-      expect(p.statut, StatutParticipation.attenteVersement);
-      expect(p.reference, startsWith('ARZ-'));
-      expect(c.read(baseDemoProvider).journal.last.action, 'creer_participation');
-    });
-    test('calcul de marge', () {
-      final m = calculerMarge(vente: 10000000, achat: 8000000, transport: 300000, autres: 200000);
-      expect(m.brute, 2000000);
-      expect(m.nette, 1500000);
-      expect(m.nettePct, 15);
-      expect(calculerMarge(vente: 0, achat: 0, transport: 0, autres: 0).nettePct, 0);
-    });
-    test('garanties selon le montant (section 8)', () {
-      expect(garantiesPour(4000000), contains("Caution du dirigeant si l'historique est faible"));
-      expect(garantiesPour(10000000), contains('Caution solidaire du dirigeant'));
-      expect(garantiesPour(50000000), contains("Caution solidaire d'un tiers solvable"));
-      expect(garantiesPour(150000000), contains('Assurance de la marchandise'));
-      expect(formeActePour(150000000), contains('livre foncier'));
+
+    test('garanties suggérées selon le montant', () {
+      expect(garantiesSuggerees(3000000), [TypeGarantie.reservePropriete]);
+      expect(garantiesSuggerees(10000000), contains(TypeGarantie.cautionnement));
+      expect(garantiesSuggerees(50000000), contains(TypeGarantie.nantissementCreance));
+      expect(garantiesSuggerees(150000000), contains(TypeGarantie.hypotheque));
     });
   });
 

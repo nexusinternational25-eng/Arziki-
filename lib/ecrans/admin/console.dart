@@ -41,12 +41,14 @@ class CadreConsole extends ConsumerWidget {
     final u = ref.watch(sessionProvider).utilisateur!;
     final entrees = [
       const _Entree(Chemins.admin, Icons.dashboard_rounded, 'Tableau de bord'),
+      const _Entree(Chemins.adminOperations, Icons.timeline_rounded, 'Opérations'),
       const _Entree(Chemins.adminComptes, Icons.people_alt_rounded, 'Comptes'),
       const _Entree(Chemins.adminInvitations, Icons.vpn_key_rounded, 'Investisseurs privés'),
       const _Entree(Chemins.adminServices, Icons.work_rounded, 'Services'),
       const _Entree(Chemins.adminContenus, Icons.edit_note_rounded, 'Contenus'),
       const _Entree(Chemins.adminEquipe, Icons.admin_panel_settings_rounded, 'Équipe'),
       const _Entree(Chemins.adminJournal, Icons.history_rounded, "Journal d'audit"),
+      const _Entree(Chemins.adminParametres, Icons.tune_rounded, 'Paramètres'),
     ].where((e) => roleAutorise(u.role, e.chemin)).toList();
     final index = entrees.indexWhere((e) => e.chemin == chemin).clamp(0, entrees.length - 1);
     final large = MediaQuery.sizeOf(context).width >= 900;
@@ -168,10 +170,11 @@ class TableauDeBordAdmin extends ConsumerWidget {
 
           final ops = ref.read(operationsProvider).operations;
           final services = ref.read(servicesProvider);
-          final enCours = ops.where((o) => o.statut != StatutOperation.cloturee).toList();
-          final volume = ops.fold<int>(0, (s, o) => s + o.montantReuni);
-          final retards = ops.where((o) => o.statut == StatutOperation.enRetard).length;
-          final margeMoy = ops.isEmpty ? 0.0 : ops.fold<double>(0, (s, o) => s + o.margeViseePct) / ops.length;
+          final enCours = ops.where((o) => !o.terminee && o.statut.index >= StatutVente.signee.index).toList();
+          final volume = enCours.fold<int>(0, (s, o) => s + (o.prixAchat ?? 0));
+          final retards = ops.where((o) => o.statut == StatutVente.enRetard || o.statut == StatutVente.enRecouvrement).length;
+          final aAnalyser = ops.where((o) => o.statut == StatutVente.soumise || o.statut == StatutVente.enAnalyse).length;
+          final alertes = ops.where((o) => !o.terminee && (o.conditions?.alerte() ?? false)).length;
           final commandesAttente = services.commandes.where((c) => c.etape == EtapeCommande.besoinEnvoye).length;
 
           Widget tuile(String titre, String valeur, IconData icone, String? chemin, {Color couleur = ArzikiCouleurs.vert}) => SizedBox(
@@ -207,17 +210,15 @@ class TableauDeBordAdmin extends ConsumerWidget {
             Text('Indicateurs', style: Theme.of(context).textTheme.titleLarge),
             Wrap(spacing: ArzikiEspaces.m, children: [
               tuile('Opérations en cours', '${enCours.length}', Icons.timeline_rounded, null),
-              tuile('Volume financé', fcfa(volume), Icons.payments_rounded, null),
+              tuile('Achats en cours', fcfa(volume), Icons.payments_rounded, null),
               tuile('Opérations en retard', '$retards', Icons.warning_amber_rounded, null, couleur: retards > 0 ? ArzikiCouleurs.erreur : ArzikiCouleurs.vert),
-              tuile('Marge visée moyenne', '${margeMoy.toStringAsFixed(1).replaceAll('.', ',')} %', Icons.trending_up_rounded, null),
+              tuile('Demandes à analyser', '$aAnalyser', Icons.fact_check_rounded, Chemins.adminOperations, couleur: ArzikiCouleurs.orange),
+              tuile('Alertes coût annuel > 24 %', '$alertes', Icons.warning_amber_rounded, Chemins.adminOperations, couleur: alertes > 0 ? ArzikiCouleurs.erreur : ArzikiCouleurs.vert),
               tuile('Partenaires et invitations', '$taille / $plafond', Icons.groups_rounded, null),
               tuile('Services : encaissé ce mois', fcfa(services.chiffreAffairesDuMois(DateTime.now())), Icons.account_balance_wallet_rounded, Chemins.adminServices, couleur: ArzikiCouleurs.info),
               tuile('Comptes au total', '${comptes.length}', Icons.people_alt_rounded, Chemins.adminComptes),
             ]),
-            const SizedBox(height: ArzikiEspaces.m),
-            const Encadre(
-              'Les décisions sur les demandes, la publication des opérations et la clôture arrivent avec les jalons 3 à 6.',
-            ),
+
           ]);
         }),
       ),

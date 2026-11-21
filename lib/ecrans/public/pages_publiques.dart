@@ -9,7 +9,6 @@ import '../../auth/session.dart';
 import '../../contenu/contenus.dart';
 import '../../core/images.dart';
 import '../../core/roles.dart';
-import '../../operations/operations.dart';
 import '../../router/garde_roles.dart';
 import '../../theme/arziki_theme.dart';
 import '../../ui/composants.dart';
@@ -271,25 +270,12 @@ class NiveauxCercle extends StatelessWidget {
 class TableauGaranties extends StatelessWidget {
   const TableauGaranties({super.key});
 
+  /// Garanties possibles selon le montant (section 24.3). Le notaire ajuste au cas par cas.
   static const paliers = [
-    ('Moins de 5 M FCFA', 4000000, [
-      'Bon de commande écrit',
-      'Paiement sur compte désigné',
-      "Caution du dirigeant si l'historique est faible",
-    ]),
-    ('De 5 à 30 M FCFA', 10000000, [
-      'Caution solidaire du dirigeant',
-      'Gage ou nantissement du stock ou du matériel',
-    ]),
-    ('De 30 à 100 M FCFA', 50000000, [
-      "Cession de créance sur l'acheteur ou délégation de paiement",
-      "Nantissement du fonds de commerce ou d'un compte",
-      "Caution solidaire d'un tiers solvable",
-    ]),
-    ('Plus de 100 M FCFA', 150000000, [
-      "Garantie foncière (hypothèque sur titre foncier, éventuellement d'un tiers garant)",
-      'Assurance de la marchandise',
-    ]),
+    ('Moins de 5 M FCFA', ['Réserve de propriété sur la marchandise']),
+    ('De 5 à 30 M FCFA', ['Cautionnement', 'Nantissement de matériel']),
+    ('De 30 à 100 M FCFA', ['Nantissement de la créance sur votre client', 'Nantissement du fonds de commerce']),
+    ('Plus de 100 M FCFA', ['Hypothèque']),
   ];
 
   @override
@@ -304,7 +290,7 @@ class TableauGaranties extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             BadgeStatut(paliers[i].$1, ton: i < 2 ? TonBadge.succes : TonBadge.alerte),
             const SizedBox(height: ArzikiEspaces.s),
-            for (final g in paliers[i].$3)
+            for (final g in paliers[i].$2)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -317,7 +303,7 @@ class TableauGaranties extends StatelessWidget {
                 ]),
               ),
             const SizedBox(height: ArzikiEspaces.s),
-            Text("Forme de l'acte : ${formeActePour(paliers[i].$2)}", style: t.bodySmall),
+            Text(i < 2 ? 'Contrats passés devant notaire' : 'Actes notariés, inscrits au RCCM ou au livre foncier', style: t.bodySmall),
           ]),
         ),
     ]);

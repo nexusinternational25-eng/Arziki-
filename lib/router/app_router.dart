@@ -9,6 +9,7 @@ import '../auth/session.dart';
 import '../config/app_config.dart';
 import '../ecrans/admin/console.dart';
 import '../ecrans/admin/console_contenus_services.dart';
+import '../ecrans/admin/console_operations.dart';
 import '../ecrans/auth/ecrans_auth.dart';
 import '../ecrans/compte/ecrans_compte.dart';
 import '../ecrans/entree/ecrans_entree.dart';
@@ -82,11 +83,12 @@ final routeurProvider = Provider<GoRouter>((ref) {
           return EcranNouvelleDemande(prefill: depuis == null ? null : 'Commande liée à : $depuis');
         },
       ),
-      GoRoute(path: '/entreprise/operation/:id', builder: (_, etat) => FicheOperation(id: etat.pathParameters['id']!, vueEntreprise: true)),
+      GoRoute(path: '/entreprise/operation/:id', builder: (_, etat) => FicheOperation(id: etat.pathParameters['id']!, vue: VueOperation.entreprise)),
       GoRoute(path: Chemins.cercle, builder: (_, _) => const EspaceCercle()),
-      GoRoute(path: '/cercle/operation/:id', builder: (_, etat) => FicheOperation(id: etat.pathParameters['id']!)),
+      GoRoute(path: '/cercle/operation/:id', builder: (_, etat) => FicheOperation(id: etat.pathParameters['id']!, vue: VueOperation.partenaire)),
       GoRoute(path: Chemins.fournisseur, builder: (_, _) => const EspaceFournisseur()),
       GoRoute(path: Chemins.notaire, builder: (_, _) => const EspaceNotaire()),
+      GoRoute(path: '/notaire/operation/:id', builder: (_, etat) => FicheOperation(id: etat.pathParameters['id']!, vue: VueOperation.notaire)),
 
       // Console
       GoRoute(path: Chemins.admin, builder: (_, _) => const TableauDeBordAdmin()),
@@ -96,6 +98,9 @@ final routeurProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Chemins.adminContenus, builder: (_, _) => const PageContenusAdmin()),
       GoRoute(path: Chemins.adminEquipe, builder: (_, _) => const PageEquipe()),
       GoRoute(path: Chemins.adminJournal, builder: (_, _) => const PageJournal()),
+      GoRoute(path: Chemins.adminOperations, builder: (_, _) => const PageOperationsAdmin()),
+      GoRoute(path: '/admin/operations/:id', builder: (_, etat) => PageOperationAdmin(id: etat.pathParameters['id']!)),
+      GoRoute(path: Chemins.adminParametres, builder: (_, _) => const PageParametresAdmin()),
     ],
   );
 });

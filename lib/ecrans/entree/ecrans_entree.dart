@@ -343,7 +343,7 @@ class EcranChoix extends ConsumerWidget {
                     // Section 24.2 : accès discret, sans argument commercial.
                     TextButton(
                       onPressed: () => context.push(Chemins.invitation),
-                      child: const Text('Espace partenaires financiers (sur invitation)'),
+                      child: const Text('Espace partenaires financiers (sur invitation)', textAlign: TextAlign.center),
                     ),
                     TextButton.icon(
                       onPressed: () => context.push(Chemins.connexionAdmin),

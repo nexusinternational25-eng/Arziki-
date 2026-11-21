@@ -18,7 +18,10 @@ void main() {
     final chaine = RegExp(r"'(?:[^'\\]|\\.)*'" '|' r'"(?:[^"\\]|\\.)*"');
     final problemes = <String>[];
     for (final f in fichiers) {
-      for (final m in chaine.allMatches(f.readAsStringSync())) {
+      // Les commentaires du code ne sont pas affichés : on les retire avant l'analyse
+      // (une apostrophe dans un commentaire fausserait le repérage des chaînes).
+      final source = f.readAsLinesSync().where((l) => !l.trimLeft().startsWith('//')).join('\n');
+      for (final m in chaine.allMatches(source)) {
         for (final interdit in TextesLegaux.expressionsInterdites) {
           if (interdit.hasMatch(m.group(0)!)) problemes.add('${f.path} : ${m.group(0)}');
         }

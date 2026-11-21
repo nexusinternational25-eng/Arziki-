@@ -28,8 +28,11 @@ class BaseDemo {
   final Map<String, Invitation> invitations = {};
   final List<EntreeAudit> journal = [];
 
-  /// Plafond de partenaires réglé par le super administrateur (section 24.2).
+  /// Paramètres réglés par le super administrateur (section 24).
   int plafondPartenaires = 50;
+  double seuilAlerteCoutAnnuel = 24;
+  double tauxTva = 18;
+  String numeroIpdcp = '';
 
   /// Pièces KYC déposées : uid -> (code de la pièce -> chemin du fichier).
   /// Comme en production, on ne garde que le chemin, jamais l'image elle-même.

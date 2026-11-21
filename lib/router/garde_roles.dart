@@ -53,6 +53,7 @@ class Chemins {
   static String operationCercle(String id) => '/cercle/operation/$id';
   static const fournisseur = '/fournisseur';
   static const notaire = '/notaire';
+  static String operationNotaire(String id) => '/notaire/operation/$id';
 
   // Console
   static const admin = '/admin';
@@ -62,6 +63,9 @@ class Chemins {
   static const adminContenus = '/admin/contenus';
   static const adminEquipe = '/admin/equipe';
   static const adminJournal = '/admin/journal';
+  static const adminOperations = '/admin/operations';
+  static String adminOperation(String id) => '/admin/operations/$id';
+  static const adminParametres = '/admin/parametres';
 
   /// Écrans d'entrée (sans compte). Une personne connectée qui les ouvre retourne à son accueil.
   static const entreeMobile = {
@@ -103,7 +107,7 @@ String accueilDe(Role role) => switch (role) {
 bool roleAutorise(Role role, String chemin) {
   if (_commencePar(chemin, Chemins.admin)) {
     if (!role.accesConsole) return false;
-    if (_commencePar(chemin, Chemins.adminEquipe)) return role.peutGererAdmins;
+    if (_commencePar(chemin, Chemins.adminEquipe) || _commencePar(chemin, Chemins.adminParametres)) return role.peutGererAdmins;
     if (_commencePar(chemin, Chemins.adminInvitations) ||
         _commencePar(chemin, Chemins.adminJournal) ||
         _commencePar(chemin, Chemins.adminServices) ||

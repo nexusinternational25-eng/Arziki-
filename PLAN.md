@@ -49,11 +49,13 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 
 ## 3. Espaces de l'application
 
-- [ ] Vitrine publique sans mention des partenaires ni des marges ; lien discret « Espace partenaires (sur invitation) »
-- [ ] Espace Entreprise : soumission d'une commande, services payants, suivi, messagerie simple, notifications
-- [ ] Espace Partenaires : opérations proposées, « Je suis intéressé », documents, échéances
-- [ ] Espace Administrateur : KYC, invitations, plafond, opérations, garanties, projets de contrats, factures (TVA 18 % par défaut), tableau de bord, export CSV
-- [ ] Rôle Notaire : actes signés, étapes de séquestre
+- [x] Vitrine publique sans mention des partenaires ni des marges ; lien discret « Espace partenaires (sur invitation) » (application et site Vercel)
+- [x] Espace Entreprise : soumission d'une commande (5 étapes), suivi, notifications (démonstration)
+- [ ] Espace Entreprise : messagerie simple avec l'administrateur
+- [x] Espace Partenaires : opérations proposées, « Je suis intéressé » (non engageant), mes opérations, documents, échéances
+- [x] Espace Administrateur : KYC, invitations, plafond, opérations (analyse, conditions, coût annuel, proposition, apports, garanties, étapes), paramètres (plafond, seuil, TVA, IPDCP), tableau de bord
+- [ ] Espace Administrateur : factures, export CSV, projets de contrats en PDF
+- [x] Rôle Notaire : dossiers assignés, garanties, confirmation de la signature et du paiement au fournisseur
 - [ ] Notifications par e-mail, copie aux deux adresses de l'administration ; point d'extension WhatsApp
 - [ ] Anglais en plus du français
 
@@ -65,8 +67,9 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 
 ## 5. Pages légales et avertissements
 
-- [ ] CGU Entreprises, CGU Partenaires financiers, confidentialité, mentions légales (brouillons pour l'avocat)
-- [ ] Avertissement R8 dans l'application et sur arziki.html
+- [x] CGU Entreprises, CGU Partenaires financiers, confidentialité, mentions légales (version 2.0, à faire relire par l'avocat)
+- [x] Avertissement R8 dans l'application et sur le site Vercel
+- [ ] Avertissement R8 sur arziki.html
 - [ ] Projets de contrats PDF avec filigrane « PROJET À VALIDER PAR LE NOTAIRE »
 
 ## 6. Site amanexus.com
