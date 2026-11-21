@@ -17,10 +17,10 @@ Une case n'est cochée qu'après un test réel. Les décisions attendues du prop
 
 Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision du propriétaire.
 
-1. **[DÉCISION] Modèle juridique (R2)** : le cahier des charges prévoit une participation aux marges, partagées à la clôture et pouvant être négatives. La mission impose une vente à terme avec une majoration fixe en FCFA. Cela change le calcul, les écrans des partenaires, les contrats et le vocabulaire.
-2. **[DÉCISION] Accès des partenaires (R3)** : la mission veut uniquement l'invitation nominative, avec un plafond de 50 par défaut et un blocage à 99. Aujourd'hui, il existe aussi la candidature spontanée au Cercle, le plafond est de 100, et les pages publiques présentent le Cercle et un simulateur de marge.
+1. **Décidé le 21 novembre : vente à terme.** Modèle juridique (R2) : le cahier des charges prévoit une participation aux marges, partagées à la clôture et pouvant être négatives. La mission impose une vente à terme avec une majoration fixe en FCFA. Cela change le calcul, les écrans des partenaires, les contrats et le vocabulaire.
+2. **Décidé le 21 novembre : invitation seule.** Accès des partenaires (R3) : la mission veut uniquement l'invitation nominative, avec un plafond de 50 par défaut et un blocage à 99. Aujourd'hui, il existe aussi la candidature spontanée au Cercle, le plafond est de 100, et les pages publiques présentent le Cercle et un simulateur de marge.
 3. **[DÉCISION] Agrégateur de paiement** : comparer FedaPay, CinetPay et PayDunya, puis attendre le choix du propriétaire (étape 4).
-4. **[DÉCISION] Chiffres du site actuel** (94 %, 100 milliards FCFA, témoignages) : les garder seulement s'ils sont exacts et prouvables.
+4. **Décidé le 21 novembre : retirés.** Chiffres du site actuel (94 %, 100 milliards FCFA, témoignages) : les garder seulement s'ils sont exacts et prouvables.
 5. **[DÉCISION] Services payants à activer** : Firebase en formule Blaze, service d'envoi d'e-mails. Rien n'est souscrit sans l'accord du propriétaire.
 6. Langues : la mission demande le français et l'anglais (le cahier des charges disait français seul en V1). Pris en compte.
 7. Couleurs : la mission fixe orange `#F57C00`, vert `#1B9E4B`, jaune `#FFC300`. Le thème de l'application sera aligné.
@@ -31,12 +31,12 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 - [x] Lire le code ARZIKI et le site actuel
 - [x] Rédiger ce plan
 - [ ] Recevoir `services.html` et `arziki.html`
-- [ ] Recevoir les décisions 1, 2 et 4
+- [x] Recevoir les décisions 1, 2 et 4
 
 ## 2. Serveur ARZIKI et sécurité
 
 - [ ] Modèle des opérations selon la décision 1 (calcul, statuts, garanties OHADA)
-- [ ] Coût annuel équivalent de la majoration, alerte au-delà de 24 % (paramétrable), si la décision 1 retient la vente à terme
+- [x] Coût annuel équivalent de la majoration, alerte au-delà de 24 % (paramétrable)
 - [ ] Accès des partenaires selon la décision 2 (invitation seule, plafond paramétrable, blocage dur)
 - [ ] Cycle de vie complet des opérations côté serveur (Cloud Functions), journal d'audit
 - [ ] Manifestation d'intérêt non engageante, avec la mention à l'écran

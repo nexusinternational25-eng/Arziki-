@@ -517,3 +517,39 @@ Le propriétaire veut qu'ARZIKI sorte du mode démonstration et s'ouvre aux pays
 ### 23.5 Vitrine
 
 - La page d'accueil (`livraison/index.html`) a été refaite le 15 novembre 2026 : simulateur de marge, critères d'éligibilité, pièces à préparer, exemples par secteur, pays et moyens de paiement. Les portefeuilles y sont présentés comme « prévus » tant qu'ils ne sont pas branchés.
+
+## 24. Mission « ARZIKI opérationnelle et amanexus.com » (décisions du propriétaire, 21 novembre 2026)
+
+Cette section **prime sur les sections précédentes** quand elles se contredisent. Plan de travail suivi dans `PLAN.md`.
+
+### 24.1 Vente à terme, pas de partage de marge (règle R2)
+
+- Une opération est un **achat-revente** : le partenaire financier (ou une société de portage) achète la marchandise au fournisseur, en devient propriétaire, puis la revend à l'entreprise avec une **majoration fixe en FCFA** payable à **échéance**. Il n'y a plus de partage de marge à la clôture.
+- Vocabulaire imposé : « opération », « commande financée », « prix d'achat », « prix de revente », « majoration », « échéance ».
+- Mots interdits partout (en plus de la section 1) : « prêt », « crédit », « intérêt(s) » au sens financier, « épargne », « dépôt » (d'argent), « placement », « rendement garanti ». Seules exceptions : les formules juridiques négatives imposées (avertissement R8 : « ARZIKI ne fait ni crédit ni collecte d'épargne ») et « manifestation d'intérêt » / « Je suis intéressé ».
+- L'application calcule pour l'administrateur le **coût annuel équivalent** de la majoration (majoration / prix d'achat × 365 / durée) et l'alerte au-delà de **24 %** (seuil paramétrable).
+- ARZIKI est **courtier** (R5) : il met en relation et perçoit une commission, il n'achète ni ne vend la marchandise.
+
+### 24.2 Partenaires financiers : invitation seule (règle R3)
+
+- L'espace « Partenaires financiers » est accessible **uniquement sur invitation nominative** de l'administrateur. La candidature spontanée (section 21.1, point 2, rôle `candidat_cercle`) est **supprimée**.
+- Aucune page publique (application, site Vercel, amanexus.com) ne s'adresse aux investisseurs ni n'affiche de marge, de taux ou de majoration. Seul un lien discret « Espace partenaires (sur invitation) » est permis.
+- Plafond de partenaires actifs : paramètre administrateur, **50 par défaut**, **blocage dur à 99**.
+- Pas de parts, titres ou certificats : chaque partenaire est partie à un contrat précis, opération par opération.
+
+### 24.3 Notaire et sûretés OHADA (règle R4)
+
+- Cycle de vie : soumission, analyse, proposition aux partenaires, manifestation d'intérêt (**non engageante**, écrit à l'écran), signature devant notaire, paiement au fournisseur, livraison, paiement à l'échéance, clôture ; plus « en retard » et « en recouvrement ».
+- Garanties par opération : réserve de propriété, nantissement de créance sur le client final, cautionnement, hypothèque, nantissement de matériel ou de fonds de commerce ; statuts « à constituer », « signée », « inscrite au RCCM », avec pièce jointe.
+- Projets de contrats PDF avec filigrane « PROJET À VALIDER PAR LE NOTAIRE ». Jamais « garanti par le notaire » ni « encadré par notaire » : on écrit « contrats passés devant notaire ».
+
+### 24.4 Autres décisions
+
+- KYC (R6) : bénéficiaire effectif pour les entreprises ; justificatif de domicile, origine des fonds et déclaration de personne politiquement exposée pour les partenaires ; aucune option d'espèces ; conservation 10 ans, pas de suppression des pièces par l'utilisateur.
+- Avertissement (R8), dans l'application et sur arziki.html : « ARZIKI ne fait ni crédit ni collecte d'épargne. Chaque opération fait l'objet de contrats passés devant notaire. Toute participation comporte un risque de perte. »
+- Champ pour le numéro de déclaration IPDCP dans les paramètres.
+- Langues : français et anglais. Couleurs : orange `#F57C00`, vert `#1B9E4B`, jaune `#FFC300`, blanc ; police Poppins.
+- Contacts : e-mail principal nexusinternational25@gmail.com, copie operation@amanexus.com, WhatsApp +228 91 97 80 80.
+- Hébergement : site et application web chez LWS (`/arziki/app/`, chemin configurable), serveur Firebase. Le site Vercel reste la démonstration.
+- Site amanexus.com : retirer « taux de réussite 94 % », « 100 milliards FCFA recouvrés » et les témoignages non prouvés. Chiffres autorisés : « financements validés de 30 M USD et 160 M USD » ; « plusieurs centaines de millions de FCFA mobilisés pour plus d'une centaine d'entreprises agricoles et agroalimentaires dans le cadre du programme USAID CATALYZE ».
+- Points d'arrêt : changement de pile, choix de l'agrégateur, règles R1 à R8, suppression ou réécriture importante d'un contenu existant du site, affichage d'un nom de personne, toute dépense, toute suppression de données.

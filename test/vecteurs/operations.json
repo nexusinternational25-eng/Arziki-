@@ -1,0 +1,50 @@
+{
+  "_commentaire": "Cas de test communs à l'application (test/operations_test.dart) et au serveur (functions/test/operations.test.ts). Montants en FCFA entiers.",
+  "conditions": [
+    { "cas": "PME classique, 60 jours", "prixAchat": 10000000, "majoration": 300000, "dureeJours": 60, "prixRevente": 10300000, "coutAnnuel": 18.25, "alerte": false },
+    { "cas": "Majoration élevée sur 30 jours", "prixAchat": 5000000, "majoration": 150000, "dureeJours": 30, "prixRevente": 5150000, "coutAnnuel": 36.5, "alerte": true },
+    { "cas": "Juste au seuil de 24 %", "prixAchat": 3650000, "majoration": 72000, "dureeJours": 30, "prixRevente": 3722000, "coutAnnuel": 24, "alerte": false },
+    { "cas": "Grand compte, 90 jours", "prixAchat": 120000000, "majoration": 4200000, "dureeJours": 90, "prixRevente": 124200000, "coutAnnuel": 14.19, "alerte": false },
+    { "cas": "Sans majoration", "prixAchat": 2000000, "majoration": 0, "dureeJours": 45, "prixRevente": 2000000, "coutAnnuel": 0, "alerte": false },
+    { "cas": "Un an", "prixAchat": 1000000, "majoration": 100000, "dureeJours": 365, "prixRevente": 1100000, "coutAnnuel": 10, "alerte": false }
+  ],
+  "invalides": [
+    { "cas": "Prix d'achat nul", "prixAchat": 0, "majoration": 1000, "dureeJours": 30 },
+    { "cas": "Majoration négative", "prixAchat": 1000000, "majoration": -1, "dureeJours": 30 },
+    { "cas": "Montant à virgule", "prixAchat": 1000000.5, "majoration": 1000, "dureeJours": 30 },
+    { "cas": "Durée nulle", "prixAchat": 1000000, "majoration": 1000, "dureeJours": 0 },
+    { "cas": "Durée de plus d'un an", "prixAchat": 1000000, "majoration": 1000, "dureeJours": 366 }
+  ],
+  "repartitions": [
+    {
+      "cas": "Trois partenaires, parts exactes",
+      "prixAchat": 10000000, "majoration": 300000, "dureeJours": 60,
+      "apports": [["a", 5000000], ["b", 3000000], ["c", 2000000]],
+      "attendu": [["a", 150000, 5150000], ["b", 90000, 3090000], ["c", 60000, 2060000]]
+    },
+    {
+      "cas": "Arrondis : le reliquat va au plus gros apport",
+      "prixAchat": 3000000, "majoration": 100000, "dureeJours": 60,
+      "apports": [["a", 1000000], ["b", 1000000], ["c", 1000000]],
+      "attendu": [["a", 33334, 1033334], ["b", 33333, 1033333], ["c", 33333, 1033333]]
+    },
+    {
+      "cas": "Arrondis avec un apport dominant",
+      "prixAchat": 7000000, "majoration": 250000, "dureeJours": 45,
+      "apports": [["a", 1000000], ["b", 6000000]],
+      "attendu": [["a", 35714, 1035714], ["b", 214286, 6214286]]
+    },
+    {
+      "cas": "Un seul partenaire",
+      "prixAchat": 2500000, "majoration": 80000, "dureeJours": 30,
+      "apports": [["a", 2500000]],
+      "attendu": [["a", 80000, 2580000]]
+    }
+  ],
+  "repartitionsInvalides": [
+    { "cas": "Apports insuffisants", "prixAchat": 10000000, "majoration": 300000, "dureeJours": 60, "apports": [["a", 5000000]] },
+    { "cas": "Apports en trop", "prixAchat": 10000000, "majoration": 300000, "dureeJours": 60, "apports": [["a", 6000000], ["b", 5000000]] },
+    { "cas": "Partenaire en double", "prixAchat": 2000000, "majoration": 1000, "dureeJours": 60, "apports": [["a", 1000000], ["a", 1000000]] },
+    { "cas": "Aucun partenaire", "prixAchat": 2000000, "majoration": 1000, "dureeJours": 60, "apports": [] }
+  ]
+}
