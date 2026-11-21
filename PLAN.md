@@ -109,4 +109,4 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 - [x] Dossier `deploiement-lws/` et son ZIP (`site/paquet_lws.sh`, construit à chaque livraison et joint à la release : https://github.com/nexusinternational25-eng/Arziki-/releases/latest/download/amanexus-lws.zip), `.htaccess` (HTTPS, routes de l'application, cache)
 - [x] `DEPLOIEMENT_LWS.md`, `ACTIVATION_FORMULAIRES.md`, `ADMIN.md`, `INSTALLATION_APK.md` (docs/lws/, copiés dans le ZIP)
 - [x] Liste des textes à faire valider (docs/lws/TEXTES_A_VALIDER.md)
-- [ ] Mise en ligne chez LWS : par le propriétaire avec le guide, ou par Claude si son ordinateur est relié à la session
+- [x] Mise en ligne chez LWS le 21 novembre 2026 (ancien site rangé dans home/ancien-site-2026, hors ligne) ; formulaire testé : message reçu
