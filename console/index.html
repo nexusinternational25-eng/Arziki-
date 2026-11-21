@@ -1,0 +1,158 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="./">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="ARZIKI, Commande Financée">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="ARZIKI">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <title>ARZIKI</title>
+  <link rel="manifest" href="manifest.json">
+  
+  
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+  <style id="splash-screen-style">
+    html {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      background-color: #FFFFFF;
+          background-size: 100% 100%;
+    }
+
+    .center {
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    .contain {
+      display:block;
+      width:100%; height:100%;
+      object-fit: contain;
+    }
+
+    .stretch {
+      display:block;
+      width:100%; height:100%;
+    }
+
+    .cover {
+      display:block;
+      width:100%; height:100%;
+      object-fit: cover;
+    }
+
+    .bottom {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      -ms-transform: translate(-50%, 0);
+      transform: translate(-50%, 0);
+    }
+
+    .bottomLeft {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+
+    .bottomRight {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+    }
+  </style>
+  <script id="splash-screen-script">
+    function removeSplashFromWeb() {
+      document.getElementById("splash")?.remove();
+      document.getElementById("splash-branding")?.remove();
+      document.body.style.background = "transparent";
+    }
+  </script>
+</head>
+<body>
+  <picture id="splash">
+      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
+      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
+      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
+  </picture>
+  
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <!-- Écran de chargement : au premier lancement, l'application télécharge
+       plusieurs mégaoctets. Sans ce message, l'écran semble vide sur un
+       téléphone en 3G. Retiré dès que la première image de l'application
+       s'affiche (événement flutter-first-frame). Si web/index.html est
+       régénéré par flutter_native_splash, remettre ce bloc. -->
+  <div id="chargement" role="status" aria-live="polite">
+    <p id="chargement-texte">Chargement de l'application ARZIKI…</p>
+    <div class="barre"><span></span></div>
+    <p id="chargement-lent" hidden>La connexion est lente. Merci de patienter, le premier chargement peut prendre une minute. Les fois suivantes, l'application s'ouvre beaucoup plus vite.</p>
+    <p id="chargement-erreur" hidden>L'application n'a pas pu se charger. Vérifiez votre connexion, puis <a href="">rechargez la page</a>.</p>
+  </div>
+  <style>
+    #chargement { position: fixed; left: 0; right: 0; bottom: 12%; text-align: center; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #1D2733; padding: 0 24px; }
+    #chargement p { margin: 0 auto 12px; max-width: 360px; }
+    #chargement a { color: #1E8E4E; font-weight: 600; }
+    #chargement .barre { width: 180px; height: 6px; margin: 0 auto 16px; border-radius: 3px; background: #F1E4D6; overflow: hidden; }
+    #chargement .barre span { display: block; width: 40%; height: 100%; border-radius: 3px; background: #F28C28; animation: arziki-chargement 1.2s ease-in-out infinite; }
+    @keyframes arziki-chargement { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+    @media (prefers-color-scheme: dark) { #chargement { color: #FFFFFF; } }
+  </style>
+  <script>
+    (function () {
+      var lent = setTimeout(function () {
+        var e = document.getElementById("chargement-lent"); if (e) e.hidden = false;
+      }, 8000);
+      function fini() {
+        clearTimeout(lent);
+        var c = document.getElementById("chargement"); if (c) c.remove();
+      }
+      window.addEventListener("flutter-first-frame", fini);
+      window.addEventListener("error", function (ev) {
+        // Échec du téléchargement d'un fichier de l'application.
+        if (ev.target && ev.target.tagName === "SCRIPT") {
+          var e = document.getElementById("chargement-erreur"); if (e) e.hidden = false;
+        }
+      }, true);
+    })();
+  </script>
+
+  <script src="flutter_bootstrap.js" async=""></script>
+
+
+</body></html>

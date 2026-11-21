@@ -1,0 +1,9 @@
+<IfModule mod_headers.c>
+Header set X-Robots-Tag "noindex, nofollow"
+# Les fichiers de l'application gardent le même nom d'une version à l'autre :
+# le navigateur les garde, mais redemande à chaque ouverture s'ils ont changé.
+<FilesMatch "\.(html|js|json|wasm|mjs)$">
+Header set Cache-Control "no-cache"
+</FilesMatch>
+</IfModule>
+AddType application/wasm .wasm
