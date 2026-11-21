@@ -29,13 +29,13 @@ SOURCE = RACINE / "site"
 SORTIE = RACINE / "deploiement-lws"
 DOMAINE = "https://www.amanexus.com"
 APP = "arziki/app/"  # application web ARZIKI (chemin configurable)
-# Tant que l'application web n'est pas construite dans deploiement-lws/arziki/app/
-# (étape 7), les boutons mènent vers la démonstration en ligne.
-APP_EN_LIGNE = "https://arziki-rosy.vercel.app/app/"
+CONSOLE = "arziki/console/"  # console d'administration (hors index Google)
+# L'application et la console sont compilées à part (site/paquet_lws.sh) et
+# copiées dans deploiement-lws/arziki/ : le dossier arziki/ n'est pas effacé ici.
 
 
 def adresse_app(p):
-    return p + APP if (SORTIE / APP / "index.html").exists() else APP_EN_LIGNE
+    return p + APP
 
 EMAIL = "nexusinternational25@gmail.com"
 EMAIL_COPIE = "operation@amanexus.com"
@@ -1083,6 +1083,7 @@ ROBOTS = f"""# amanexus.com : tout est ouvert aux moteurs de recherche, sauf l'a
 User-agent: *
 Allow: /
 Disallow: /{APP}
+Disallow: /{CONSOLE}
 Disallow: /contact.php
 
 Sitemap: {DOMAINE}/sitemap.xml

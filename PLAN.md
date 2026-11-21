@@ -101,11 +101,12 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 
 ## 7. Construction
 
-- [ ] Application web dans `/arziki/app/` (chemin configurable), option `app.amanexus.com`
-- [ ] APK Android relié au même serveur
+- [x] Application web dans `/arziki/app/` et console dans `/arziki/console/` (adresses relatives : marche dans n'importe quel dossier, donc aussi sur `app.amanexus.com`)
+- [ ] APK Android relié au même serveur (attend le projet Firebase réel ; démonstration en attendant)
 
 ## 8. Déploiement LWS et guides
 
-- [ ] Dossier `deploiement-lws/` et son ZIP, `.htaccess` (HTTPS, routes de l'application, cache)
-- [ ] `DEPLOIEMENT_LWS.md`, `ACTIVATION_FORMULAIRES.md`, `ADMIN.md`, guide d'installation de l'APK
-- [ ] Liste des textes à faire valider (avocat, arabophone)
+- [x] Dossier `deploiement-lws/` et son ZIP (`site/paquet_lws.sh`, construit à chaque livraison et joint à la release : https://github.com/nexusinternational25-eng/Arziki-/releases/latest/download/amanexus-lws.zip), `.htaccess` (HTTPS, routes de l'application, cache)
+- [x] `DEPLOIEMENT_LWS.md`, `ACTIVATION_FORMULAIRES.md`, `ADMIN.md`, `INSTALLATION_APK.md` (docs/lws/, copiés dans le ZIP)
+- [x] Liste des textes à faire valider (docs/lws/TEXTES_A_VALIDER.md)
+- [ ] Mise en ligne chez LWS : par le propriétaire avec le guide, ou par Claude si son ordinateur est relié à la session

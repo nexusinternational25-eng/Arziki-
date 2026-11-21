@@ -72,3 +72,6 @@ ui-debug.log
 functions/node_modules/
 functions/lib/
 node_modules/
+
+# Application web compilée pour LWS (produite par site/paquet_lws.sh)
+/deploiement-lws/arziki/

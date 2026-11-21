@@ -2,6 +2,7 @@
 User-agent: *
 Allow: /
 Disallow: /arziki/app/
+Disallow: /arziki/console/
 Disallow: /contact.php
 
 Sitemap: https://www.amanexus.com/sitemap.xml

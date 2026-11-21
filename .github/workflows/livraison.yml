@@ -128,6 +128,11 @@ jobs:
             --dart-define-from-file=config/firebase.json --dart-define=APP_MODE=$MODE --dart-define=CIBLE=console \
             -o build/site-console
 
+      - name: Dossier complet pour LWS (amanexus.com)
+        run: |
+          pip install --quiet pillow
+          site/paquet_lws.sh build/site-app build/site-console "$PWD/build/amanexus-lws.zip"
+
       - name: Assembler le site
         run: |
           mkdir -p site
@@ -181,11 +186,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete demo --yes --cleanup-tag --repo "${{ github.repository }}" || true
-          gh release create demo site/ARZIKI.apk \
+          gh release create demo site/ARZIKI.apk build/amanexus-lws.zip \
             --repo "${{ github.repository }}" \
             --target "${GITHUB_SHA}" \
             --title "ARZIKI, version de démonstration" \
-            --notes "Application Android ARZIKI en mode démonstration (données fictives). Code SMS : 123456. Construite le $(TZ=Africa/Lome date +'%d/%m/%Y à %Hh%M')." \
+            --notes "Application Android ARZIKI en mode démonstration (données fictives). Code SMS : 123456. Le fichier amanexus-lws.zip contient le site amanexus.com complet à déposer chez LWS, avec ses guides. Construite le $(TZ=Africa/Lome date +'%d/%m/%Y à %Hh%M')." \
             --latest
 
       - uses: actions/upload-artifact@v4

@@ -38,8 +38,8 @@ def texte_visible(source):
 
 def main():
     problemes = []
-    pages = sorted(SITE.rglob("*.html"))
-    pages = [p for p in pages if "arziki/app" not in str(p)]
+    # Le dossier arziki/ contient l'application et la console compilées : ce ne sont pas des pages du site.
+    pages = sorted(p for p in SITE.rglob("*.html") if "arziki" not in p.relative_to(SITE).parts[:1])
     for page in pages:
         nom = page.relative_to(SITE)
         src = page.read_text(encoding="utf-8")
