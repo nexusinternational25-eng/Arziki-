@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://www.amanexus.com/</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/"/>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/"/>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/expertises.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/expertises.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/expertises.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/expertises.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/expertises.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/expertises.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/expertises.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/expertises.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/formations.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/formations.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/formations.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/formations.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/formations.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/formations.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/formations.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/formations.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/services.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/services.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/services.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/services.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/services.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/services.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/services.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/services.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/arziki.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/arziki.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/arziki.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/arziki.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/arziki.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/arziki.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/arziki.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/arziki.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/algerie-niger.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.amanexus.com/ar/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/algerie-niger.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/ar/algerie-niger.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.amanexus.com/ar/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/algerie-niger.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/algerie-niger.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.amanexus.com/ar/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/algerie-niger.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/algerie-niger.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/contact.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/contact.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/contact.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/contact.html"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/mentions-legales.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/mentions-legales.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/mentions-legales.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/mentions-legales.html"/>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/mentions-legales.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/mentions-legales.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/mentions-legales.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/mentions-legales.html"/>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/confidentialite.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/confidentialite.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/confidentialite.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/confidentialite.html"/>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.amanexus.com/en/confidentialite.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.amanexus.com/confidentialite.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.amanexus.com/en/confidentialite.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.amanexus.com/confidentialite.html"/>
+    <priority>0.3</priority>
+  </url>
+</urlset>

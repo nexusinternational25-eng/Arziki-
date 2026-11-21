@@ -1,0 +1,9 @@
+index.html {'performance': 99, 'accessibility': 100, 'best-practices': 100, 'seo': 100}
+arziki.html {'performance': 98, 'accessibility': 100, 'best-practices': 100, 'seo': 100}
+ar/algerie-niger.html {'performance': 99, 'accessibility': 100, 'best-practices': 100, 'seo': 100}
+en/index.html {'performance': 99, 'accessibility': 100, 'best-practices': 100, 'seo': 100}
+expertises.html {'performance': 99, 'accessibility': 100, 'best-practices': 100, 'seo': 100}
+formations.html {'performance': 99, 'accessibility': 100, 'best-practices': 100, 'seo': 100}
+services.html {'performance': 98, 'accessibility': 100, 'best-practices': 100, 'seo': 100}
+contact.html {'performance': 100, 'accessibility': 100, 'best-practices': 100, 'seo': 100}
+en/algerie-niger.html {'performance': 99, 'accessibility': 100, 'best-practices': 100, 'seo': 100}

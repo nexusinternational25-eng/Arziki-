@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ARZIKI · Ta commande. Notre financement.</title>
+  <meta name="description" content="ARZIKI aide les entreprises du Togo et de la sous-région à financer leurs commandes fermes et à préparer leurs dossiers. Contrats passés devant notaire.">
+  <meta name="theme-color" content="#14653A">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:title" content="ARZIKI · Ta commande. Notre financement.">
+  <meta property="og:description" content="Financez vos commandes, préparez vos dossiers. Contrats passés devant notaire.">
+  <meta property="og:image" content="images/ambiance_marche.jpg">
+  <link rel="icon" href="logo.png">
+  <style>
+    @font-face { font-family: Inter; src: url(app/assets/assets/fonts/Inter-Regular.otf); font-weight: 400; font-display: swap; }
+    @font-face { font-family: Inter; src: url(app/assets/assets/fonts/Inter-SemiBold.otf); font-weight: 600; font-display: swap; }
+    @font-face { font-family: Poppins; src: url(app/assets/assets/fonts/Poppins-SemiBold.ttf); font-weight: 600; font-display: swap; }
+    @font-face { font-family: Poppins; src: url(app/assets/assets/fonts/Poppins-Bold.ttf); font-weight: 700; font-display: swap; }
+    :root { --orange:#F28C28; --orangef:#D96F0B; --vert:#1E8E4E; --vertf:#14653A; --nuit:#0B3A22; --jaune:#F7C51E; --texte:#16212B; --gris:#F4F8F5; --sec:#4a5560; --r:20px;
+      --ombre: 0 10px 30px rgba(14,63,37,.10); --ombre2: 0 22px 50px rgba(14,63,37,.18); }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--texte); background: #fff; line-height: 1.6; font-size: 16px; overflow-x: hidden; }
+    h1, h2, h3 { font-family: Poppins, Inter, sans-serif; line-height: 1.2; margin: 0 0 12px; letter-spacing: -.3px; }
+    h2 { font-size: clamp(26px, 4.4vw, 40px); }
+    h3 { font-size: 19px; }
+    p { margin: 0 0 12px; }
+    a { color: var(--vert); }
+    img { max-width: 100%; }
+    .in { max-width: 1140px; margin: 0 auto; }
+    section { padding: 76px 20px; position: relative; }
+    section.gris { background: var(--gris); }
+    .sur { display: inline-block; font-family: Poppins, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--orangef); margin-bottom: 10px; }
+    .intro { color: var(--sec); max-width: 740px; margin-bottom: 34px; font-size: 17px; }
+    .grad { background: linear-gradient(90deg, var(--orange), var(--jaune)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    /* Bandeau et barre */
+    .demo { background: var(--jaune); text-align: center; font-weight: 600; font-size: 13px; padding: 6px 12px; }
+    .barre { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.86); -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%); border-bottom: 1px solid rgba(20,101,58,.12); }
+    .barre .in { padding: 10px 20px; display: flex; align-items: center; gap: 16px; }
+    .barre img { height: 38px; display: block; }
+    .barre nav { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; }
+    .barre nav a { color: var(--texte); text-decoration: none; font-weight: 600; font-size: 14px; position: relative; padding: 4px 0; }
+    .barre nav a::after { content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--orange); transition: width .25s; }
+    .barre nav a:hover::after { width: 100%; }
+    .burger { display: none; margin-left: auto; width: 44px; height: 44px; border: 0; border-radius: 12px; background: #1e8e4e1a; cursor: pointer; padding: 12px 10px; }
+    .burger span { display: block; height: 3px; border-radius: 3px; background: var(--vertf); margin-bottom: 5px; transition: transform .25s, opacity .25s; }
+    .burger span:last-child { margin: 0; }
+    .ouvert .burger span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+    .ouvert .burger span:nth-child(2) { opacity: 0; }
+    .ouvert .burger span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+    /* Boutons */
+    .bouton { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, var(--orange), var(--orangef)); color: #fff; text-decoration: none; font-weight: 700; padding: 14px 22px; border-radius: 14px; box-shadow: 0 10px 24px rgba(242,140,40,.38); transition: transform .18s, box-shadow .18s; border: 0; cursor: pointer; font-size: 16px; font-family: inherit; }
+    .bouton:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(242,140,40,.45); }
+    .bouton.vert { background: linear-gradient(135deg, var(--vert), var(--vertf)); box-shadow: 0 10px 24px rgba(30,142,78,.35); }
+    .bouton.clair { background: rgba(255,255,255,.14); color: #fff; box-shadow: none; border: 1.5px solid rgba(255,255,255,.6); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .bouton.blanc { background: #fff; color: var(--vertf); box-shadow: var(--ombre); }
+
+    /* Hero */
+    .hero { position: relative; min-height: 640px; display: flex; align-items: center; color: #fff; overflow: hidden; isolation: isolate;
+      background: linear-gradient(125deg, #0B3A22, #14653A 45%, #1E8E4E); }
+    .hero::before { content: ""; position: absolute; inset: 0; z-index: -2; background: url(images/ambiance_marche.jpg) center/cover; opacity: .34; mix-blend-mode: luminosity; }
+    .aurore { position: absolute; z-index: -1; border-radius: 50%; filter: blur(70px); opacity: .75; animation: flotte 14s ease-in-out infinite alternate; }
+    .aurore.a { width: 480px; height: 480px; background: var(--orange); top: -160px; right: -120px; }
+    .aurore.b { width: 420px; height: 420px; background: var(--jaune); bottom: -200px; left: -120px; opacity: .5; animation-duration: 18s; }
+    .aurore.c { width: 320px; height: 320px; background: #35d07f; top: 30%; left: 42%; opacity: .35; animation-duration: 22s; }
+    @keyframes flotte { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(40px,-30px,0) scale(1.15); } }
+    .hero .in { width: 100%; padding: 64px 20px 72px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 36px; align-items: center; }
+    .badge { display: inline-block; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.4); color: #fff; font-weight: 700; font-size: 13px; padding: 5px 14px; border-radius: 30px; margin-bottom: 16px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .hero h1 { font-size: clamp(38px, 7vw, 68px); margin-bottom: 16px; }
+    .hero p { font-size: 19px; max-width: 600px; opacity: .96; }
+    .hero .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+    .verre { background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.35); border-radius: 24px; padding: 22px; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 24px 60px rgba(0,0,0,.25); }
+    .verre h3 { color: #fff; font-size: 17px; margin-bottom: 14px; }
+    .ligne { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(255,255,255,.3); font-size: 15px; }
+    .ligne:last-of-type { border: 0; }
+    .ligne b { font-family: Poppins, sans-serif; white-space: nowrap; }
+    .pastille { display: inline-block; background: var(--jaune); color: #3b2c00; font-weight: 700; font-size: 12px; border-radius: 20px; padding: 2px 10px; }
+    .chiffres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 30px; max-width: 600px; }
+    .chiffres div { background: rgba(255,255,255,.1); border-radius: 16px; padding: 12px 14px; font-size: 13px; }
+    .chiffres b { display: block; font-size: 24px; font-family: Poppins, sans-serif; color: var(--jaune); }
+
+    /* Parcours */
+    .parcours { margin-top: -54px; padding-top: 0; padding-bottom: 30px; z-index: 5; }
+    .grille { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    .carte { background: #fff; border-radius: var(--r); box-shadow: var(--ombre); overflow: hidden; transition: transform .25s, box-shadow .25s; border: 1px solid rgba(20,101,58,.07); }
+    .carte:hover { transform: translateY(-6px); box-shadow: var(--ombre2); }
+    .carte .c { padding: 22px; }
+    .carte img, .carte .vis { width: 100%; height: 178px; object-fit: cover; display: block; background: linear-gradient(135deg, #1e8e4e33, #f28c2833); }
+    .role { border-top: 5px solid var(--orange); }
+    .role.v { border-top-color: var(--vert); } .role.j { border-top-color: var(--jaune); }
+    .role .ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; font-size: 26px; background: #f28c281f; margin-bottom: 12px; }
+    .role.v .ico { background: #1e8e4e1f; } .role.j .ico { background: #f7c51e33; }
+    .lien { font-weight: 700; text-decoration: none; }
+
+    /* Etapes */
+    .frise { display: grid; gap: 0; position: relative; }
+    .frise::before { content: ""; position: absolute; left: 25px; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(var(--vert), var(--orange), var(--jaune)); border-radius: 3px; }
+    .etape { display: flex; gap: 18px; align-items: flex-start; padding: 12px 0; position: relative; }
+    .num { flex: none; width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, var(--vert), var(--vertf)); color: #fff; font-weight: 700; display: grid; place-items: center; font-family: Poppins, sans-serif; font-size: 20px; box-shadow: 0 8px 18px rgba(30,142,78,.35); }
+    .etape:nth-child(even) .num { background: linear-gradient(135deg, var(--orange), var(--orangef)); box-shadow: 0 8px 18px rgba(242,140,40,.35); }
+    .deux { display: grid; gap: 36px; grid-template-columns: 1fr 1fr; align-items: center; }
+    .photo { border-radius: 28px; overflow: hidden; box-shadow: var(--ombre2); min-height: 260px; background: linear-gradient(135deg, #14653A, #F28C28); }
+    .photo img { width: 100%; height: 100%; min-height: 260px; object-fit: cover; display: block; }
+
+    /* Simulateur */
+    .simu { background: linear-gradient(135deg, var(--nuit), var(--vertf)); color: #fff; border-radius: 28px; padding: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; box-shadow: var(--ombre2); position: relative; overflow: hidden; }
+    .simu::after { content: ""; position: absolute; width: 320px; height: 320px; border-radius: 50%; background: var(--orange); filter: blur(90px); opacity: .45; right: -100px; top: -120px; pointer-events: none; }
+    .simu label { display: block; font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+    .simu input { width: 100%; font: inherit; font-size: 18px; font-weight: 600; padding: 13px 14px; border-radius: 14px; border: 2px solid rgba(255,255,255,.25); background: rgba(255,255,255,.1); color: #fff; margin-bottom: 14px; }
+    .simu input:focus { outline: none; border-color: var(--jaune); }
+    .resultat { background: #fff; color: var(--texte); border-radius: 22px; padding: 22px; position: relative; z-index: 1; }
+    .resultat .gros { font-family: Poppins, sans-serif; font-size: clamp(30px, 6vw, 44px); font-weight: 700; color: var(--vertf); line-height: 1.1; }
+    .jauge { height: 14px; border-radius: 10px; background: #e6ece8; overflow: hidden; margin: 12px 0 6px; position: relative; }
+    .jauge i { display: block; height: 100%; width: 0; border-radius: 10px; background: linear-gradient(90deg, var(--orange), var(--vert)); transition: width .5s; }
+    .seuil { position: absolute; left: 40%; top: -4px; bottom: -4px; width: 3px; background: var(--texte); }
+    .verdict { margin-top: 12px; padding: 12px 14px; border-radius: 14px; font-weight: 600; font-size: 15px; background: #eef2f0; }
+    .verdict.ok { background: #ddf2e5; color: var(--vertf); } .verdict.ko { background: #ffe8d6; color: #9a4a00; }
+
+    /* Listes */
+    .coche { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .coche li { background: #fff; border-radius: 14px; padding: 12px 14px 12px 46px; position: relative; box-shadow: 0 4px 14px rgba(14,63,37,.06); }
+    .coche li::before { content: "✓"; position: absolute; left: 12px; top: 10px; width: 24px; height: 24px; border-radius: 50%; background: var(--vert); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+    .coche.o li::before { content: "•"; background: var(--orange); font-size: 20px; }
+    .prix { color: var(--vert); font-weight: 700; }
+    .tag { display: inline-block; background: #ddf2e5; color: var(--vertf); font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 20px; margin-bottom: 8px; }
+    .tag.o { background: #ffe8d6; color: #9a4a00; } .tag.j { background: #fdf0b8; color: #5a4300; }
+    .niveau { border-left: 6px solid var(--vert); }
+    .niveau.o { border-left-color: var(--orange); } .niveau.f { border-left-color: var(--vertf); }
+    .risque { background: #f7c51e40; color: #5a3f00; border-radius: 16px; padding: 16px 18px; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--r); overflow: hidden; box-shadow: var(--ombre); }
+    th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid #1d273315; vertical-align: top; font-size: 15px; }
+    th { background: linear-gradient(135deg, var(--vert), var(--vertf)); color: #fff; font-family: Poppins, sans-serif; font-weight: 600; }
+    .defile { overflow-x: auto; border-radius: var(--r); -webkit-overflow-scrolling: touch; }
+    .defile table { min-width: 640px; }
+    .pays { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+    .pays div { background: #fff; border-radius: 18px; padding: 16px; box-shadow: var(--ombre); border-bottom: 4px solid #d5ddd8; }
+    .pays div.actif { border-bottom-color: var(--vert); background: linear-gradient(180deg, #fff, #eaf7ef); }
+    .pays b { display: block; font-family: Poppins, sans-serif; font-size: 17px; }
+    .pays span { font-size: 13px; color: var(--sec); }
+    .apk { background: linear-gradient(135deg, var(--nuit), var(--vert)); color: #fff; border-radius: 28px; padding: 36px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: center; box-shadow: var(--ombre2); position: relative; overflow: hidden; }
+    .apk::after { content: ""; position: absolute; width: 300px; height: 300px; border-radius: 50%; background: var(--jaune); filter: blur(100px); opacity: .35; left: -80px; bottom: -140px; pointer-events: none; }
+    .apk > * { position: relative; z-index: 1; }
+    .apk ol { margin: 12px 0 0; padding-left: 20px; }
+    .apk .petit { opacity: .88; font-size: 14px; }
+    .apk .gros { font-size: 18px; padding: 18px 26px; }
+    .comptes td, .comptes th { font-size: 14px; padding: 10px 12px; }
+    code { background: #fff; border: 1px solid #1d273322; border-radius: 6px; padding: 1px 6px; font-size: 14px; color: var(--texte); }
+    details { background: #fff; border-radius: 16px; box-shadow: 0 4px 16px #1d273310; margin: 10px 0; padding: 0 18px; }
+    summary { cursor: pointer; font-weight: 600; padding: 16px 0; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; float: right; color: var(--orange); font-weight: 700; font-size: 20px; line-height: 1; }
+    details[open] summary::after { content: "-"; }
+    details p { color: var(--sec); padding-bottom: 14px; margin: 0; }
+    .fondateur { display: flex; gap: 18px; align-items: center; }
+    .avatar { width: 72px; height: 72px; border-radius: 50%; background: #fff; border: 2px solid #1e8e4e55; display: grid; place-items: center; flex: none; }
+    footer { background: var(--nuit); color: #d9e8df; padding: 52px 20px 96px; font-size: 14px; }
+    footer a { color: #fff; }
+    footer img { height: 40px; }
+    .wa { position: fixed; right: 16px; bottom: 16px; z-index: 40; background: #25D366; color: #fff; text-decoration: none; font-weight: 700; border-radius: 40px; padding: 13px 18px; box-shadow: 0 12px 28px rgba(37,211,102,.45); display: flex; align-items: center; gap: 8px; }
+    .wa::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #fff; animation: pouls 1.8s infinite; }
+    @keyframes pouls { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,.7); } 100% { box-shadow: 0 0 0 12px rgba(255,255,255,0); } }
+
+    /* Apparition au défilement, seulement si le script tourne */
+    .js .ap { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
+    .js .ap.vu { opacity: 1; transform: none; }
+
+    @media (max-width: 860px) {
+      .deux, .apk, .simu, .hero .in { grid-template-columns: 1fr; }
+      .burger { display: block; }
+      .barre nav { display: none; position: absolute; left: 0; right: 0; top: 100%; background: #fff; flex-direction: column; gap: 0; padding: 8px 20px 16px; box-shadow: 0 18px 30px rgba(0,0,0,.12); }
+      .ouvert nav { display: flex; }
+      .barre nav a { padding: 12px 0; border-bottom: 1px solid #1d273312; font-size: 16px; }
+      .barre .tel { display: none; }
+      section { padding: 56px 18px; }
+      .hero { min-height: 0; }
+      .hero .in { padding: 44px 18px 84px; }
+      .apk, .simu { padding: 24px; }
+      .chiffres b { font-size: 19px; }
+      .wa span { display: none; } .wa { padding: 15px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .aurore, .wa::before { animation: none; }
+      .js .ap { opacity: 1; transform: none; transition: none; }
+      .carte, .bouton { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo">Version de démonstration : données fictives, aucun paiement réel</div>
+
+  <header class="barre" id="barre">
+    <div class="in">
+      <a href="#haut"><img src="logo.png" alt="ARZIKI"></a>
+      <nav id="menu">
+        <a href="#comment">Comment ça marche</a>
+        <a href="#eligible">Éligibilité</a>
+        <a href="#services">Services</a>
+        <a href="#securite">Sécurité</a>
+        <a href="#pays">Pays et paiements</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a class="bouton tel" href="#application" style="padding:10px 16px">Télécharger</a>
+      <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="hero" id="haut">
+    <div class="aurore a"></div><div class="aurore b"></div><div class="aurore c"></div>
+    <div class="in">
+      <div>
+        <span class="badge">La Commande Financée · Togo et sous-région</span>
+        <h1>Ta commande.<br><span class="grad">Notre financement.</span></h1>
+        <p>Vous avez une commande ferme mais pas la trésorerie pour acheter la marchandise ? ARZIKI vérifie la commande et vous met en relation avec un partenaire qui achète la marchandise pour vous et vous la revend à terme. Contrats passés devant notaire.</p>
+        <div class="actions">
+          <a class="bouton" href="#application">Télécharger l'application</a>
+          <a class="bouton clair" href="app/">Essayer en ligne</a>
+        </div>
+        <div class="chiffres">
+          <div><b>30 M USD</b>financement validé</div>
+          <div><b>160 M USD</b>financement validé</div>
+          <div><b>100+</b>entreprises agricoles accompagnées</div>
+        </div>
+      </div>
+      <div class="verre">
+        <h3>Une vente à terme, en clair <span class="pastille">exemple illustratif</span></h3>
+        <div class="ligne"><span>Commande ferme de votre client</span><b>10 000 000 FCFA</b></div>
+        <div class="ligne"><span>Le partenaire achète au fournisseur</span><b>8 200 000 FCFA</b></div>
+        <div class="ligne"><span>Il vous revend la marchandise</span><b>prix fixé par écrit</b></div>
+        <div class="ligne"><span>Vous payez à l'échéance</span><b style="color:var(--jaune)">60 jours</b></div>
+        <p style="font-size:13px;opacity:.85;margin:10px 0 0">Le fournisseur est payé directement : l'argent ne passe jamais par l'application.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="parcours">
+    <div class="in grille">
+      <div class="carte role ap"><div class="c"><div class="ico">📦</div><h3>Je suis une entreprise</h3><p>J'ai une commande ferme et je cherche le financement de l'achat.</p><a class="lien" href="https://wa.me/22891978080?text=Bonjour%20ARZIKI%2C%20je%20suis%20une%20entreprise%20et%20j%27ai%20une%20commande%20ferme%20%C3%A0%20financer.">Présenter ma commande sur WhatsApp</a></div></div>
+      <div class="carte role v ap"><div class="c"><div class="ico">📁</div><h3>J'ai besoin d'un dossier</h3><p>Dossier clés en main, business plan, états financiers ou formation pour mon équipe.</p><a class="lien" href="#services">Voir les services</a></div></div>
+      <div class="carte role j ap"><div class="c"><div class="ico">🚚</div><h3>Je suis fournisseur</h3><p>Je peux livrer des commandes ARZIKI et être payé directement à la signature.</p><a class="lien" href="https://wa.me/22891978080?text=Bonjour%20ARZIKI%2C%20je%20suis%20fournisseur%20et%20je%20souhaite%20travailler%20avec%20vous.">Devenir fournisseur partenaire</a></div></div>
+    </div>
+  </section>
+
+  <section id="comment">
+    <div class="in">
+      <span class="sur">Le principe</span>
+      <h2>Comment ça marche</h2>
+      <p class="intro">La commande financée en cinq étapes, de votre bon de commande jusqu'au paiement à l'échéance.</p>
+      <div class="deux">
+        <div class="frise">
+          <div class="etape ap"><div class="num">1</div><div><h3>Vous soumettez votre commande</h3><p>Bon de commande ou marché de votre client, devis du fournisseur, montant, délai et garanties proposées.</p></div></div>
+          <div class="etape ap"><div class="num">2</div><div><h3>ARZIKI analyse</h3><p>Nous contactons directement votre client, contrôlons le fournisseur et les prix, et indiquons les garanties adaptées.</p></div></div>
+          <div class="etape ap"><div class="num">3</div><div><h3>Vente à terme</h3><p>Un partenaire achète la marchandise au fournisseur et vous la revend avec une majoration fixe, convenue par écrit avant la signature.</p></div></div>
+          <div class="etape ap"><div class="num">4</div><div><h3>Contrats passés devant notaire</h3><p>Vente et garanties sont signées devant notaire. Le fournisseur est payé directement, puis vous livrez votre client.</p></div></div>
+          <div class="etape ap"><div class="num">5</div><div><h3>Paiement à l'échéance</h3><p>Vous réglez le prix de revente à la date convenue. Chaque étape est suivie dans l'application, avec les documents.</p></div></div>
+        </div>
+        <div class="photo ap"><img src="images/accueil_livraison_chantier.jpg" alt="Livraison de ciment sur un chantier" loading="lazy"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="eligible">
+    <div class="in deux">
+      <div class="ap">
+        <span class="sur">Avant de déposer</span>
+        <h2>Votre commande est-elle éligible ?</h2>
+        <ul class="coche">
+          <li>Un bon de commande ou un contrat signé par un acheteur identifié</li>
+          <li>Une quantité, un prix et une date de livraison précis</li>
+          <li>Un fournisseur connu, avec un devis ou une facture proforma</li>
+          <li>Un prix d'achat cohérent avec les prix du marché</li>
+          <li>Un client final solide, joignable par ARZIKI</li>
+          <li>Des garanties adaptées au montant, signées devant notaire</li>
+        </ul>
+      </div>
+      <div class="ap">
+        <span class="sur">Pour gagner du temps</span>
+        <h2>Pièces à préparer</h2>
+        <ul class="coche o">
+          <li>Bon de commande ou contrat de l'acheteur</li>
+          <li>Devis ou facture proforma du fournisseur</li>
+          <li>RCCM et NIF de votre entreprise</li>
+          <li>Pièce d'identité du dirigeant</li>
+          <li>Déclaration du bénéficiaire effectif de l'entreprise</li>
+          <li>Coordonnées de l'acheteur, pour la vérification directe</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="gris">
+    <div class="in">
+      <span class="sur">Dans la pratique</span>
+      <h2>Des commandes de tous les secteurs</h2>
+      <p class="intro">Exemples illustratifs de commandes qui se prêtent à une vente à terme. Ce ne sont pas des opérations réalisées.</p>
+      <div class="grille">
+        <div class="carte ap"><img src="images/operation_btp.jpg" alt="" loading="lazy"><div class="c"><span class="tag o">Bâtiment</span><h3>Matériaux de chantier</h3><p>Ciment, fer ou carreaux commandés par une entreprise de construction pour un chantier en cours.</p></div></div>
+        <div class="carte ap"><img src="images/operation_cereales.jpg" alt="" loading="lazy"><div class="c"><span class="tag">Agroalimentaire</span><h3>Céréales et intrants</h3><p>Livraison de céréales ou d'intrants à un transformateur ou à une coopérative, sur contrat.</p></div></div>
+        <div class="carte ap"><img src="images/operation_pharmacie.jpg" alt="" loading="lazy"><div class="c"><span class="tag j">Santé</span><h3>Produits de santé</h3><p>Commande d'un établissement de santé auprès d'un distributeur autorisé.</p></div></div>
+        <div class="carte ap"><img src="images/operation_flotte_logistique.jpg" alt="" loading="lazy"><div class="c"><span class="tag o">Transport</span><h3>Pièces et consommables</h3><p>Pneus, lubrifiants ou pièces commandés par une flotte de camions sous contrat.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="services">
+    <div class="in">
+      <span class="sur">Opérés par NEXUS International</span>
+      <h2>Nos services</h2>
+      <p class="intro">Des experts pour préparer vos dossiers et former vos équipes.</p>
+      <div class="grille">
+        <div class="carte ap"><img src="images/services_conseil.jpg" alt="" loading="lazy"><div class="c"><span class="tag">Montage de dossiers</span><h3>Diagnostic express</h3><p>Savoir en une semaine si votre projet est finançable, et comment.</p><p class="prix">25 000 FCFA</p></div></div>
+        <div class="carte ap"><img src="images/services_analyse.jpg" alt="" loading="lazy"><div class="c"><span class="tag">Montage de dossiers</span><h3>Business plan complet</h3><p>Un dossier solide pour une banque ou un investisseur. Commission de 2 % si le financement est obtenu.</p><p class="prix">150 000 à 500 000 FCFA</p></div></div>
+        <div class="carte ap"><img src="images/accueil_dirigeante_signature.jpg" alt="" loading="lazy"><div class="c"><span class="tag o">États financiers</span><h3>Analyse SYSCOHADA et prévisionnels</h3><p>Les états financiers certifiés sont établis avec un expert-comptable agréé partenaire.</p><p class="prix">À partir de 100 000 FCFA</p></div></div>
+        <div class="carte ap"><img src="images/ambiance_equipe.jpg" alt="" loading="lazy"><div class="c"><span class="tag j">Formations</span><h3>Formations pour les PME</h3><p>Dossier de financement, gestion financière, états financiers, appels d'offres, garanties. Attestation remise.</p><p class="prix">Sessions à Lomé et à Kara</p></div></div>
+      </div>
+      <p style="margin-top:22px;color:var(--sec)">Aussi : projets structurés (mémorandum et modèle financier), grands projets avec arrangeur, accompagnement banque et leasing. ARZIKI Carnet, l'outil de gestion des commerçants, arrive bientôt.</p>
+    </div>
+  </section>
+
+  <section id="securite">
+    <div class="in">
+      <span class="sur">Le cadre</span>
+      <h2>Sécurité et notaire</h2>
+      <p class="intro">Chaque opération fait l'objet de contrats passés devant notaire. L'application ne détient jamais l'argent : les fonds vont au fournisseur ou sur le compte séquestre du notaire.</p>
+      <div class="defile ap"><table>
+        <tr><th>Montant de l'opération</th><th>Garanties possibles</th><th>Forme de l'acte</th></tr>
+        <tr><td>Moins de 5 M FCFA</td><td>Réserve de propriété sur la marchandise</td><td>Contrat passé devant notaire</td></tr>
+        <tr><td>De 5 à 30 M FCFA</td><td>En plus : cautionnement ; nantissement de matériel</td><td>Contrat passé devant notaire</td></tr>
+        <tr><td>De 30 à 100 M FCFA</td><td>En plus : nantissement de la créance sur votre client ; nantissement du fonds de commerce</td><td>Acte notarié, inscription au RCCM</td></tr>
+        <tr><td>Plus de 100 M FCFA</td><td>En plus : hypothèque</td><td>Acte notarié, inscription au livre foncier</td></tr>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="pays" class="gris">
+    <div class="in">
+      <span class="sur">Une monnaie, un droit des affaires</span>
+      <h2>Le Togo d'abord, la sous-région ensuite</h2>
+      <p class="intro">Les pays de l'UEMOA partagent le franc CFA et le droit OHADA. ARZIKI s'ouvre pays par pays, dès qu'un notaire partenaire et une validation juridique locale sont en place.</p>
+      <div class="pays ap">
+        <div class="actif"><span class="tag">Actif</span><b>Togo</b><span>Lomé, Kara</span></div>
+        <div><span class="tag j">Ouverture prévue</span><b>Bénin</b><span>Cotonou</span></div>
+        <div><span class="tag j">Ouverture prévue</span><b>Niger</b><span>Niamey</span></div>
+        <div><span class="tag j">Ouverture prévue</span><b>Côte d'Ivoire</b><span>Abidjan</span></div>
+        <div><span class="tag j">Ouverture prévue</span><b>Burkina Faso</b><span>Ouagadougou</span></div>
+        <div><span class="tag j">Ouverture prévue</span><b>Sénégal</b><span>Dakar</span></div>
+        <div><span class="tag j">Ouverture prévue</span><b>Mali</b><span>Bamako</span></div>
+      </div>
+      <h3 style="margin-top:44px;font-size:24px">Moyens de paiement</h3>
+      <div class="grille" style="margin-top:14px">
+        <div class="carte ap"><div class="c"><span class="tag">Frais de service</span><h3>Mobile money et carte</h3><p>Diagnostics, dossiers et formations se règlent dans l'application, par un agrégateur de paiement agréé par la BCEAO. Portefeuilles prévus selon le pays : Mixx by Yas et Flooz au Togo, MTN MoMo, Moov et Celtiis au Bénin, Airtel Money, Moov et Zamani au Niger, Orange Money, MTN, Moov et Wave dans les autres pays, ainsi que les cartes Visa et Mastercard.</p></div></div>
+        <div class="carte ap"><div class="c"><span class="tag o">Fonds des opérations</span><h3>Virement vers le notaire</h3><p>L'argent d'une opération ne passe jamais par l'application. Il est versé au fournisseur ou sur le compte séquestre du notaire, par virement bancaire ou par paiement instantané interopérable de la BCEAO, depuis n'importe quel pays de la zone.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="application">
+    <div class="in apk ap">
+      <div>
+        <h2>L'application ARZIKI</h2>
+        <p>Pour les entreprises, les fournisseurs et les notaires. Version 1.1.0, publiée le 21 novembre 2026.</p>
+        <ol>
+          <li>Appuyez sur le bouton et ouvrez le fichier téléchargé.</li>
+          <li>Si Android le demande, autorisez l'installation depuis cette source.</li>
+          <li>Ouvrez ARZIKI et choisissez votre profil.</li>
+        </ol>
+        <p class="petit" style="margin-top:14px">Android 6 ou plus récent. Fonctionne sur les téléphones d'entrée de gamme.</p>
+      </div>
+      <div style="text-align:center">
+        <a class="bouton gros" href="ARZIKI.apk" download>Télécharger l'APK (43 Mo)</a>
+        <p class="petit" style="margin-top:14px">Ou <a href="app/" style="color:#fff">essayer dans le navigateur</a>. Équipe ARZIKI : <a href="console/" style="color:#fff">console d'administration</a>.</p>
+      </div>
+    </div>
+    <div class="in" style="margin-top:32px">
+      <h3>Comptes de démonstration</h3>
+      <p style="color:var(--sec)">Le code reçu « par SMS » est toujours <code>123456</code>.</p>
+      <div class="defile"><table class="comptes" style="min-width:420px">
+        <tr><th>Profil</th><th>Connexion</th></tr>
+        <tr><td>Entreprise</td><td><code>90000011</code></td></tr>
+        <tr><td>Fournisseur</td><td><code>90000041</code></td></tr>
+        <tr><td>Notaire</td><td><code>90000051</code></td></tr>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="apropos" class="gris">
+    <div class="in deux">
+      <div class="photo ap"><img src="images/cercle_diaspora.jpg" alt="" loading="lazy"></div>
+      <div class="ap">
+        <span class="sur">Qui sommes-nous</span>
+        <h2>À propos d'ARZIKI</h2>
+        <p>ARZIKI signifie « prospérité » en haoussa. Notre mission : permettre aux entreprises d'honorer leurs commandes fermes et de préparer des dossiers solides, avec des contrats passés devant notaire. Nos valeurs : transparence, rigueur, respect.</p>
+        <div class="fondateur" style="margin-top:18px">
+          <div class="avatar"><img src="logo.png" alt="" style="width:56px"></div>
+          <div><b>CEO de NEXUS International</b><br><span style="color:var(--sec)">Fondateur d'ARZIKI, conseiller en investissement certifié USAID CATALYZE Sahel, certifié CESAG Dakar.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="in">
+      <span class="sur">Vos questions</span>
+      <h2>Questions fréquentes</h2>
+      <details><summary>Qu'est-ce qu'une commande ferme ?</summary><p>Un bon de commande ou un marché signé par un client identifié, avec une quantité, un prix et une date de livraison. ARZIKI le confirme directement auprès de votre client.</p></details>
+      <details><summary>Qu'est-ce qu'une vente à terme ?</summary><p>Un partenaire achète la marchandise au fournisseur, puis vous la revend avec une majoration fixe en FCFA, payable à une échéance convenue. Vous connaissez le prix de revente avant de signer.</p></details>
+      <details><summary>ARZIKI avance-t-il de l'argent ?</summary><p>Non. ARZIKI ne fait ni crédit ni collecte d'épargne. C'est un intermédiaire : il vérifie, met en relation et perçoit une commission. L'argent ne passe jamais par l'application.</p></details>
+      <details><summary>Les frais de service sont-ils remboursables ?</summary><p>Frais non remboursables une fois le travail commencé. Le devis précise toujours le contenu et le délai.</p></details>
+      <details><summary>ARZIKI est-elle disponible hors du Togo ?</summary><p>Le Togo est le premier pays actif. Les autres pays de la sous-région ouvrent progressivement, dès qu'un notaire partenaire et une validation juridique locale sont en place. Écrivez-nous pour signaler votre pays.</p></details>
+    </div>
+  </section>
+
+  <section id="contact" class="gris">
+    <div class="in deux">
+      <div class="ap">
+        <span class="sur">Parlons de votre commande</span>
+        <h2>Nous contacter</h2>
+        <p class="intro">Notre équipe vous répond du lundi au vendredi, de 8 h à 17 h 30, et le samedi, de 9 h à 13 h.</p>
+        <p><a class="bouton vert" href="https://wa.me/22891978080">Discuter sur WhatsApp</a></p>
+        <p>WhatsApp et téléphone : <a href="tel:+22891978080">+228 91 97 80 80</a><br>
+        E-mail : <a href="mailto:nexusinternational25@gmail.com">nexusinternational25@gmail.com</a> (copie : <a href="mailto:operation@amanexus.com">operation@amanexus.com</a>)<br>
+        Adresse : 18 rue Léopold Sédar Senghor, Tokoin Wuiti, Lomé, Togo</p>
+      </div>
+      <div class="photo ap"><img src="images/partenariat_port.jpg" alt="" loading="lazy"></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="in grille">
+      <div><img src="logo_blanc.png" alt="ARZIKI"><p style="margin-top:12px">Ta commande. Notre financement.<br>Une offre de NEXUS International.</p></div>
+      <div><b>Mentions légales</b><p>NEXUS International<br>RCCM TG-LFW-01-2025-A10-03200<br>18 rue Léopold Sédar Senghor, Tokoin Wuiti, Lomé<br>Directeur de la publication : le CEO de NEXUS International</p></div>
+      <div><b>Liens</b><p><a href="app/#/infos/conditions">Conditions d'utilisation</a><br><a href="app/#/infos/confidentialite">Politique de confidentialité</a><br><a href="app/#/infos/risques">Avertissement</a><br><a href="console/">Console d'administration</a></p></div>
+    </div>
+    <p class="in" style="margin-top:20px"><b>ARZIKI ne fait ni crédit ni collecte d'épargne. Chaque opération fait l'objet de contrats passés devant notaire. Toute participation comporte un risque de perte.</b></p>
+    <p class="in" style="margin-top:8px;opacity:.7">Conditions d'utilisation et politique de confidentialité, version 2.0 du 21 novembre 2026. Photographies réalisées pour ARZIKI.</p>
+  </footer>
+
+  <a class="wa" href="https://wa.me/22891978080" aria-label="Discuter sur WhatsApp"><span>WhatsApp</span></a>
+
+  <script>
+    (function () {
+      var d = document, racine = d.documentElement;
+      racine.classList.add('js');
+
+      // Menu mobile
+      var barre = d.getElementById('barre'), burger = d.getElementById('burger');
+      burger.addEventListener('click', function () {
+        var o = barre.classList.toggle('ouvert');
+        burger.setAttribute('aria-expanded', o ? 'true' : 'false');
+      });
+      d.getElementById('menu').addEventListener('click', function (e) {
+        if (e.target.tagName === 'A') { barre.classList.remove('ouvert'); burger.setAttribute('aria-expanded', 'false'); }
+      });
+
+      // Apparition au défilement
+      var blocs = d.querySelectorAll('.ap');
+      if ('IntersectionObserver' in window) {
+        var obs = new IntersectionObserver(function (es) {
+          es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('vu'); obs.unobserve(e.target); } });
+        }, { rootMargin: '0px 0px -8% 0px' });
+        blocs.forEach(function (b) { obs.observe(b); });
+      } else { blocs.forEach(function (b) { b.classList.add('vu'); }); }
+      // Sécurité : tout devient visible après 2,5 s quoi qu'il arrive
+      setTimeout(function () { blocs.forEach(function (b) { b.classList.add('vu'); }); }, 2500);
+
+      // Image manquante : on garde le fond dégradé de secours
+      d.querySelectorAll('img').forEach(function (i) {
+        i.addEventListener('error', function () { i.style.visibility = 'hidden'; });
+      });
+
+    })();
+  </script>
+</body>
+</html>
