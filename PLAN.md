@@ -81,7 +81,21 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 - [ ] services.html intégrée au nouveau design
 - [ ] arziki.html corrigée (section 8 de la mission)
 - [ ] algerie-niger.html (arabe de droite à gauche, français, anglais si simple)
-- [ ] SEO : titres, descriptions, réseaux sociaux, sitemap.xml, robots.txt
+- [ ] SEO de base : titres, descriptions, réseaux sociaux, sitemap.xml, robots.txt
+
+## 6 bis. Référencement naturel Google (demande du 21 novembre 2026)
+
+- [ ] Recherche des mots-clés visés, page par page (par exemple : financement de commande Togo, business plan Lomé, recouvrement de créances Togo, commerce Algérie Niger, accueil de délégations Lomé)
+- [ ] Une page par sujet, un titre H1 unique, des intertitres clairs, des textes utiles (sans rien inventer)
+- [ ] Balises title et description uniques, adresse canonique, Open Graph et carte Twitter sur chaque page
+- [ ] Versions linguistiques déclarées (hreflang fr, en, ar) et sitemap.xml qui les liste
+- [ ] Données structurées JSON-LD : Organization, ProfessionalService (adresse de Lomé, téléphone, horaires), Service, FAQPage, BreadcrumbList
+- [ ] Vitesse : images compressées (WebP), chargement différé, CSS et JS légers, cache dans .htaccess ; objectif Lighthouse SEO et performances au-dessus de 90 sur mobile
+- [ ] Accessibilité utile au référencement : textes alternatifs des images, contrastes, liens explicites
+- [ ] robots.txt et sitemap.xml ; l'application web /arziki/app/ et les pages de démonstration hors index (noindex)
+- [ ] Liens internes entre les pages (NEXUS, Business Services, ARZIKI, Desk Algérie-Niger)
+- [ ] Guide pas à pas pour le propriétaire : Google Search Console (vérification du domaine chez LWS, envoi du sitemap) et fiche Google Business Profile (gratuite) pour le référencement local à Lomé
+- [ ] Contrôle final avec Lighthouse sur chaque page, résultats joints au compte rendu
 
 ## 7. Construction
 
