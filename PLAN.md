@@ -61,8 +61,8 @@ Ces points touchent les règles R1 à R8 : rien n'est codé avant la décision d
 
 ## 4. Paiements
 
-- [ ] Comparatif FedaPay, CinetPay, PayDunya et recommandation
-- [ ] **[DÉCISION]** Choix de l'agrégateur
+- [x] Comparatif FedaPay, CinetPay, PayDunya et recommandation (FedaPay recommandé, repli virement pour le Niger)
+- [ ] **[DÉCISION]** Choix de l'agrégateur : le propriétaire attend les offres écrites (21 novembre 2026)
 - [ ] Intégration en mode test (sandbox), webhook vérifié côté serveur, facture automatique
 
 ## 5. Pages légales et avertissements
